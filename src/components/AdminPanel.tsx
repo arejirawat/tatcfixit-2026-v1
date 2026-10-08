@@ -124,6 +124,20 @@ export default function AdminPanel() {
     }
   };
 
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'PENDING': return 'รอซ่อม';
+      case 'REPAIRING': return 'กำลังซ่อม';
+      case 'WAITING_RETURN': return 'รอส่งคืน';
+      case 'FIXED': return 'ซ่อมได้ (รอส่งคืน)';
+      case 'UNREPAIRABLE': return 'ซ่อมไม่ได้ (รอส่งคืน)';
+      case 'RETURNED': return 'ส่งคืนแล้ว';
+      case 'RETURNED_FIXED': return 'ส่งคืนแล้ว (ซ่อมได้)';
+      case 'RETURNED_UNREPAIRABLE': return 'ส่งคืนแล้ว (ซ่อมไม่ได้)';
+      default: return status;
+    }
+  };
+
   const exportExcel = () => {
     const ws = XLSX.utils.json_to_sheet(jobs.map(j => ({
       'รหัสคิวงาน': j.jobId,
@@ -131,7 +145,7 @@ export default function AdminPanel() {
       'เบอร์โทร': j.customer?.phone || '-',
       'สิ่งของที่ซ่อม': `${j.category?.name || ''} ${j.itemDetail}`.trim(),
       'อาการเสีย': j.symptoms,
-      'สถานะ': j.status === 'RETURNED' ? 'รับคืนแล้ว' : 'กำลังดำเนินการ',
+      'สถานะ': getStatusText(j.status),
       'วันที่แจ้งซ่อม': new Date(j.createdAt).toLocaleDateString('th-TH')
     })));
     const wb = XLSX.utils.book_new();
@@ -166,7 +180,7 @@ export default function AdminPanel() {
       j.jobId,
       j.customer?.name,
       `${j.category?.name || ''} ${j.itemDetail}`.trim(),
-      j.status === 'RETURNED' ? 'รับคืนแล้ว' : 'กำลังดำเนินการ',
+      getStatusText(j.status),
       new Date(j.createdAt).toLocaleDateString('th-TH')
     ]);
 
@@ -244,11 +258,9 @@ export default function AdminPanel() {
                     <td className="px-4 py-3 text-sm">{job.customer?.phone || '-'}</td>
                     <td className="px-4 py-3 text-sm">{job.category?.name} {job.itemDetail}</td>
                     <td className="px-4 py-3 text-sm">
-                      {job.status === 'RETURNED' ? (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">รับคืนแล้ว</span>
-                      ) : (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">รอดำเนินการ</span>
-                      )}
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${job.status.startsWith('RETURNED') ? 'bg-green-100 text-green-800' : job.status === 'FIXED' ? 'bg-blue-100 text-blue-800' : job.status === 'UNREPAIRABLE' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                        {getStatusText(job.status)}
+                      </span>
                     </td>
                   </tr>
                 ))}
