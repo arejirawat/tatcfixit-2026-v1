@@ -24,6 +24,8 @@ export default function Dashboard() {
   const [customerJobs, setCustomerJobs] = useState<any[]>([]);
   const [isFetchingJobs, setIsFetchingJobs] = useState(false);
   const [searchJobId, setSearchJobId] = useState('');
+  const [returnFilterStatus, setReturnFilterStatus] = useState('ALL');
+  const [returnSearchText, setReturnSearchText] = useState('');
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -133,6 +135,13 @@ export default function Dashboard() {
       const data = await res.json();
       if (data.success) {
         setCustomerJobs(data.jobs);
+        if (data.customer) {
+          setCustomerData((prev: any) => ({
+            ...prev,
+            phone: prev?.phone || data.customer.phone || '-',
+            name: data.customer.name || prev?.name
+          }));
+        }
       }
     } catch (error) {
       alert('ไม่สามารถดึงข้อมูลรายการซ่อมได้');
@@ -442,7 +451,37 @@ export default function Dashboard() {
 
             {step === 3 && serviceType === 'return' && (
               <div>
-                <h2 className="text-xl font-bold mb-4 text-gray-800">รายการสิ่งของที่นำมาส่งซ่อม</h2>
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded shadow-sm text-black">
+                  <h3 className="font-bold text-lg text-blue-800">ข้อมูลผู้ใช้บริการ</h3>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <div><span className="font-semibold">ชื่อ-สกุล:</span> {customerData?.name || `${customerData?.firstName || ''} ${customerData?.lastName || ''}`}</div>
+                    <div><span className="font-semibold">เบอร์โทรศัพท์:</span> {customerData?.phone || '-'}</div>
+                  </div>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-gray-800">รายการสิ่งของที่นำมาส่งซ่อม</h2>
+                  <div className="flex space-x-2 mt-2 sm:mt-0">
+                    <select 
+                      className="border border-gray-300 rounded px-3 py-1 text-sm text-black"
+                      value={returnFilterStatus}
+                      onChange={e => setReturnFilterStatus(e.target.value)}
+                    >
+                      <option value="ALL">ทุกสถานะ</option>
+                      <option value="WAITING_RETURN">ซ่อมเสร็จ/รอส่งคืน</option>
+                      <option value="PENDING_REPAIRING">กำลังซ่อม</option>
+                      <option value="RETURNED">ส่งมอบคืนแล้ว</option>
+                    </select>
+                    <input 
+                      type="text" 
+                      placeholder="ค้นหารหัสคิว / ชนิดสิ่งของ..." 
+                      className="border border-gray-300 rounded px-3 py-1 text-sm text-black"
+                      value={returnSearchText}
+                      onChange={e => setReturnSearchText(e.target.value)}
+                    />
+                  </div>
+                </div>
+
                 <div className="bg-white p-2 rounded border border-gray-200">
                   {isFetchingJobs ? (
                     <p className="text-center py-8 text-gray-500">กำลังดึงข้อมูล...</p>
@@ -459,7 +498,21 @@ export default function Dashboard() {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {customerJobs.map((job) => (
+                        {customerJobs.filter(job => {
+                          // Filter Status
+                          if (returnFilterStatus === 'WAITING_RETURN' && !['WAITING_RETURN', 'FIXED', 'UNREPAIRABLE'].includes(job.status)) return false;
+                          if (returnFilterStatus === 'PENDING_REPAIRING' && !['PENDING', 'REPAIRING'].includes(job.status)) return false;
+                          if (returnFilterStatus === 'RETURNED' && job.status !== 'RETURNED') return false;
+                          // Filter Search Text
+                          if (returnSearchText) {
+                            const searchLower = returnSearchText.toLowerCase();
+                            const matchId = job.jobId.toLowerCase().includes(searchLower);
+                            const matchCat = (job.category?.name || '').toLowerCase().includes(searchLower);
+                            const matchDetail = (job.itemDetail || '').toLowerCase().includes(searchLower);
+                            if (!matchId && !matchCat && !matchDetail) return false;
+                          }
+                          return true;
+                        }).map((job) => (
                           <tr key={job.jobId} className={job.status === 'RETURNED' ? 'bg-green-50' : ''}>
                             <td className="px-6 py-4 whitespace-nowrap font-medium">{job.jobId}</td>
                             <td className="px-6 py-4">{job.category?.name} {job.itemDetail}</td>

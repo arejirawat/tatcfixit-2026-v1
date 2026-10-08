@@ -98,10 +98,10 @@ export async function GET(request: Request) {
     });
 
     if (!customer) {
-      return NextResponse.json({ success: true, jobs: [] });
+      return NextResponse.json({ success: true, jobs: [], customer: null });
     }
 
-    return NextResponse.json({ success: true, jobs: customer.jobs });
+    return NextResponse.json({ success: true, jobs: customer.jobs, customer: { name: customer.name, phone: customer.phone, address: customer.address } });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
