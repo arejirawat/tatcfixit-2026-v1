@@ -75,11 +75,18 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const citizenId = searchParams.get('citizenId');
 
-  if (!citizenId) {
-    return NextResponse.json({ success: false, message: 'Missing citizenId' }, { status: 400 });
-  }
-
   try {
+    if (!citizenId) {
+      const allJobs = await prisma.job.findMany({
+        include: {
+          category: true,
+          customer: true
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      return NextResponse.json({ success: true, jobs: allJobs });
+    }
+
     const customer = await prisma.customer.findUnique({
       where: { citizenId },
       include: {

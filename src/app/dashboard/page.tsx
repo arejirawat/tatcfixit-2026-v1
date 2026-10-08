@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import AdminPanel from '@/components/AdminPanel';
+import ReportPanel from '@/components/ReportPanel';
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<'register' | 'admin'>('register');
+  const [activeTab, setActiveTab] = useState<'register' | 'report' | 'admin'>('register');
   const [centerName, setCenterName] = useState('วิทยาลัยเทคนิคสัตหีบ');
   const [contactPhone, setContactPhone] = useState('038-xxx-xxx');
   const [customerData, setCustomerData] = useState<any>(null);
@@ -205,6 +206,12 @@ export default function Dashboard() {
                 className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'register' ? 'bg-blue-700' : 'hover:bg-blue-500'}`}
               >
                 ลงทะเบียนผู้ใช้บริการ
+              </button>
+              <button 
+                onClick={() => setActiveTab('report')}
+                className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'report' ? 'bg-blue-700' : 'hover:bg-blue-500'}`}
+              >
+                สรุปข้อมูล (Dashboard)
               </button>
               <button 
                 onClick={() => {
@@ -777,6 +784,8 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+        ) : activeTab === 'report' ? (
+          <ReportPanel />
         ) : (
           <AdminPanel />
         )}
