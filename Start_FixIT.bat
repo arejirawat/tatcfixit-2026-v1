@@ -53,10 +53,8 @@ IF NOT EXIST "node_modules\" (
     call npx prisma generate
 )
 
-IF NOT EXIST "prisma\dev.db" (
-    echo INFO: Creating local database...
-    call npx prisma db push
-)
+echo INFO: Synchronizing database schema...
+call npx prisma db push --accept-data-loss
 
 :: 5. Start Python Agent
 echo INFO: Starting Smartcard Reader service (Port 8081)...
