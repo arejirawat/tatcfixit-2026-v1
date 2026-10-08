@@ -12,26 +12,42 @@ export default function TechnicianPage() {
   const [jobDetails, setJobDetails] = useState<any>(null);
   const [checking, setChecking] = useState(false);
 
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'PENDING': return 'รอซ่อม';
+      case 'REPAIRING': return 'กำลังซ่อม';
+      case 'WAITING_RETURN': return 'รอส่งคืน';
+      case 'FIXED': return 'ซ่อมได้ (รอส่งคืน)';
+      case 'UNREPAIRABLE': return 'ซ่อมไม่ได้ (รอส่งคืน)';
+      case 'RETURNED': return 'ส่งคืนแล้ว';
+      case 'RETURNED_FIXED': return 'ส่งคืนแล้ว (ซ่อมได้)';
+      case 'RETURNED_UNREPAIRABLE': return 'ส่งคืนแล้ว (ซ่อมไม่ได้)';
+      default: return status;
+    }
+  };
+
   const checkJob = async () => {
     if (!jobId) return;
+    const cleanId = jobId.trim();
     setChecking(true);
     setMessage('');
     try {
-      const res = await fetch(`/api/jobs/search?jobId=${jobId}`);
+      const res = await fetch(`/api/jobs/search?jobId=${encodeURIComponent(cleanId)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.job) {
           setJobDetails(data.job);
+          setMessage('');
         } else {
           setJobDetails(null);
-          setMessage('ไม่พบรหัสคิวงานนี้ในระบบ');
+          setMessage('ไม่พบหมายเลขคิวงานนี้ในระบบ');
         }
       } else {
         setJobDetails(null);
-        setMessage('ไม่พบรหัสคิวงานนี้ในระบบ');
+        setMessage('ไม่พบหมายเลขคิวงานนี้ในระบบ');
       }
     } catch (e) {
-      setMessage('เกิดข้อผิดพลาดในการตรวจสอบ');
+      setMessage('เกิดข้อผิดพลาดในการตรวจสอบระบบ');
     } finally {
       setChecking(false);
     }
@@ -114,8 +130,12 @@ export default function TechnicianPage() {
           {jobDetails && (
             <div className="bg-blue-50 border border-blue-200 p-3 rounded-md text-sm">
               <p><strong>ผู้แจ้งซ่อม:</strong> {jobDetails.customer?.name}</p>
+              <p><strong>เบอร์โทร:</strong> {jobDetails.customer?.phone || '-'}</p>
               <p><strong>สิ่งของ:</strong> {jobDetails.category?.name} {jobDetails.itemDetail}</p>
               <p><strong>อาการเสีย:</strong> {jobDetails.symptoms}</p>
+              <p className="mt-2">
+                <strong>สถานะปัจจุบัน:</strong> <span className="font-bold text-blue-700">{getStatusText(jobDetails.status)}</span>
+              </p>
             </div>
           )}
 
