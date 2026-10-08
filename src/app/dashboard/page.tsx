@@ -781,6 +781,10 @@ export default function Dashboard() {
           <AdminPanel />
         )}
       </main>
+
+      <footer className="text-center py-6 text-sm text-gray-500 print:hidden mt-auto">
+        designed by Jirawat Saengkhunnatham , Thai-Austrian Technical College 081069 + AI
+      </footer>
     </div>
   );
 }
