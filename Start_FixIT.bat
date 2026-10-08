@@ -63,12 +63,12 @@ call npx prisma db push --accept-data-loss
 
 :: 5. Start Python Agent
 echo INFO: Starting Smartcard Reader service (Port 8081)...
-start "Smartcard Agent" cmd /k "%PYTHON_CMD% agent.py"
+start /min "Smartcard Agent" cmd /k "%PYTHON_CMD% agent.py"
 
 :: 6. Start Web Server
 echo INFO: Starting Web Server (Port 3000)...
 echo INFO: If Windows Defender Firewall prompts, please click Allow Access.
-start "FixIT Web Server" cmd /k "npm run dev"
+start /min "FixIT Web Server" cmd /k "npm run dev"
 
 :: 7. Wait and open browser
 echo INFO: Preparing the web application... 
@@ -78,6 +78,9 @@ start http://localhost:3000/dashboard
 echo.
 echo =======================================================
 echo  System started successfully! 
-echo  You can minimize these windows, but DO NOT CLOSE them.
+echo  The server windows have been MINIMIZED to your taskbar.
+echo  DO NOT CLOSE the minimized windows in the taskbar.
+echo  This setup window will close automatically.
 echo =======================================================
-pause >nul
+timeout /t 5 >nul
+exit
