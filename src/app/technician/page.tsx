@@ -107,7 +107,7 @@ export default function TechnicianPage() {
             <div className="flex gap-2">
               <input 
                 type="text" 
-                className="w-full px-3 py-2 border rounded-md uppercase"
+                className="w-full px-3 py-2 border rounded-md uppercase text-black bg-white"
                 value={jobId}
                 onChange={(e) => {
                   setJobId(e.target.value.toUpperCase());
@@ -120,7 +120,7 @@ export default function TechnicianPage() {
                 type="button"
                 onClick={checkJob}
                 disabled={checking || !jobId}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md font-medium text-sm hover:bg-blue-700 whitespace-nowrap disabled:bg-gray-400"
+                className="bg-blue-600 text-white px-4 py-2 rounded-md font-medium text-sm hover:bg-blue-700 active:bg-blue-800 active:scale-95 transition-all whitespace-nowrap disabled:bg-gray-400 disabled:active:scale-100 touch-manipulation"
               >
                 {checking ? 'รอสักครู่...' : 'ตรวจสอบ'}
               </button>
@@ -128,7 +128,7 @@ export default function TechnicianPage() {
           </div>
 
           {jobDetails && (
-            <div className="bg-blue-50 border border-blue-200 p-3 rounded-md text-sm">
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded-md text-sm text-black">
               <p><strong>ผู้แจ้งซ่อม:</strong> {jobDetails.customer?.name}</p>
               <p><strong>เบอร์โทร:</strong> {jobDetails.customer?.phone || '-'}</p>
               <p><strong>สิ่งของ:</strong> {jobDetails.category?.name} {jobDetails.itemDetail}</p>
@@ -142,7 +142,7 @@ export default function TechnicianPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">รายละเอียด / ผลการซ่อม</label>
             <textarea 
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2 border rounded-md text-black bg-white"
               rows={3}
               value={repairNotes}
               onChange={(e) => setRepairNotes(e.target.value)}
@@ -156,14 +156,14 @@ export default function TechnicianPage() {
               <button 
                 type="button"
                 onClick={() => setStatus('FIXED')}
-                className={`py-3 px-4 rounded-md font-bold text-sm border-2 ${status === 'FIXED' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-600 hover:bg-blue-50'}`}
+                className={`py-3 px-4 rounded-md font-bold text-sm border-2 active:scale-95 transition-all touch-manipulation ${status === 'FIXED' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-600 hover:bg-blue-50'}`}
               >
                 ✓ ซ่อมได้
               </button>
               <button 
                 type="button"
                 onClick={() => setStatus('UNREPAIRABLE')}
-                className={`py-3 px-4 rounded-md font-bold text-sm border-2 ${status === 'UNREPAIRABLE' ? 'bg-red-600 text-white border-red-600' : 'bg-white text-red-600 border-red-600 hover:bg-red-50'}`}
+                className={`py-3 px-4 rounded-md font-bold text-sm border-2 active:scale-95 transition-all touch-manipulation ${status === 'UNREPAIRABLE' ? 'bg-red-600 text-white border-red-600' : 'bg-white text-red-600 border-red-600 hover:bg-red-50'}`}
               >
                 ✕ ซ่อมไม่ได้
               </button>
@@ -173,7 +173,7 @@ export default function TechnicianPage() {
           <button 
             type="submit" 
             disabled={loading || !status}
-            className="w-full py-3 px-4 mt-4 rounded-md font-bold text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
+            className="w-full py-3 px-4 mt-4 rounded-md font-bold text-white bg-green-600 hover:bg-green-700 active:bg-green-800 active:scale-95 transition-all disabled:bg-gray-400 disabled:active:scale-100 touch-manipulation"
           >
             {loading ? 'กำลังบันทึก...' : 'บันทึกข้อมูล'}
           </button>
