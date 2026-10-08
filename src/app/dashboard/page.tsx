@@ -294,7 +294,7 @@ export default function Dashboard() {
                           }}
                           className="w-full bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold py-2 px-4 rounded border border-blue-300 transition-colors"
                         >
-                          ดูรายการส่งมอบคืนทั้งหมด
+                          ดูรายการทั้งหมด
                         </button>
                       </div>
                     </div>
@@ -509,6 +509,7 @@ export default function Dashboard() {
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รหัสคิวงาน</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลูกค้า</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สิ่งของ</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่รับงาน</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
                           <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">การจัดการ</th>
                         </tr>
@@ -534,6 +535,9 @@ export default function Dashboard() {
                             <td className="px-6 py-4 whitespace-nowrap font-medium">{job.jobId}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{job.customer?.name || '-'}</td>
                             <td className="px-6 py-4">{job.category?.name} {job.itemDetail}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {new Date(job.createdAt).toLocaleDateString('th-TH')}
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               {job.status === 'RETURNED' && <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">ส่งมอบคืนแล้ว</span>}
                               {job.status === 'FIXED' && <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">ซ่อมได้ (รอส่งคืน)</span>}
