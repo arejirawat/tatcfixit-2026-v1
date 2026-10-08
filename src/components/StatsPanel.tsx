@@ -18,7 +18,7 @@ export default function StatsPanel() {
     fetchStats();
   }, []);
 
-  const fetchStats = async () => {
+  async function fetchStats() {
     try {
       const res = await fetch('/api/jobs');
       const data = await res.json();
@@ -30,9 +30,9 @@ export default function StatsPanel() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const processStats = (jobs: any[]) => {
+  function processStats(jobs: any[]) {
     const statMap: Record<string, TechnicianStat> = {};
 
     jobs.forEach(job => {
