@@ -47,6 +47,11 @@ echo INFO: Checking Smartcard Reader dependencies...
 call %PYTHON_CMD% -m pip install pyscard flask flask-cors >nul 2>&1
 
 :: 4. Install Node.js Dependencies
+IF NOT EXIST ".env" (
+    echo INFO: Creating default environment variables...
+    echo DATABASE_URL="file:./dev.db" > .env
+)
+
 IF NOT EXIST "node_modules\" (
     echo INFO: First time setup. Downloading system files. Please wait 2-3 minutes...
     call npm install
