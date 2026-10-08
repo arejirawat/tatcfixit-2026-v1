@@ -502,32 +502,192 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {/* ใบงานช่าง */}
-                  <div className={`border-2 border-solid border-gray-800 p-6 rounded max-w-2xl mx-auto ${printMode && printMode !== 'full' ? 'hidden print:hidden' : 'block'}`}>
-                    <h1 className="text-2xl font-bold text-center mb-6">ใบรับงานซ่อม (สำหรับช่าง)</h1>
-                    <div className="flex gap-6">
-                      {customerData?.photo && (
-                        <div className="flex-shrink-0">
-                          <img src={customerData.photo} className="w-32 h-40 object-cover border" alt="รูปถ่ายลูกค้า" />
+                  {/* ใบงานช่าง (A4 Form Layout) */}
+                  <div className={`print:p-0 print:m-0 w-full max-w-4xl mx-auto bg-white text-black font-sans ${printMode && printMode !== 'full' ? 'hidden print:hidden' : 'block'}`}>
+                    
+                    {/* Header */}
+                    <div className="text-center mb-6">
+                      <div className="flex justify-center mb-2">
+                        <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white">
+                          <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </div>
-                      )}
-                      <div className="grid grid-cols-2 gap-4 text-sm flex-grow">
-                        <div><span className="font-bold">รหัสคิวงาน:</span> {customerData?.jobId || 'กำลังออกรหัส...'}</div>
-                        <div><span className="font-bold">วันที่รับซ่อม:</span> {new Date().toLocaleDateString('th-TH')}</div>
-                        <div className="col-span-2"><span className="font-bold">สินค้าที่ซ่อม:</span> {productType} {productDetail}</div>
-                        <div className="col-span-2"><span className="font-bold">อาการเสีย:</span> {symptoms}</div>
-                        <div className="col-span-2 border-t pt-2 mt-2"></div>
-                        <div><span className="font-bold">ชื่อลูกค้า:</span> {customerData?.firstName} {customerData?.lastName}</div>
-                        <div><span className="font-bold">รหัสประชาชน:</span> {customerData?.citizenId}</div>
-                        <div className="col-span-2"><span className="font-bold">ที่อยู่:</span> {customerData?.address}</div>
-                        <div className="col-span-2"><span className="font-bold">เบอร์โทรติดต่อ:</span> {phone || '.........................'}</div>
+                      </div>
+                      <h1 className="text-2xl font-bold">ศูนย์ซ่อมสร้างเพื่อชุมชน (Fix it Center)</h1>
+                      <h2 className="text-xl font-bold mt-1">ใบรับงานซ่อม (Repair Form)</h2>
+                      <p className="mt-4 text-lg">ชื่อศูนย์ <span className="underline decoration-dotted underline-offset-4 px-12">วิทยาลัยเทคนิคสัตหีบ</span></p>
+                    </div>
+
+                    {/* Table Container */}
+                    <div className="border border-black">
+                      
+                      {/* Row 1: Date and Job ID */}
+                      <div className="flex border-b border-black text-sm">
+                        <div className="flex-1 p-2 border-r border-black flex items-center">
+                          <span>วัน / เดือน / ปี</span>
+                          <span className="flex-1 border-b border-dotted border-black mx-2 text-center text-blue-700">{new Date().toLocaleDateString('th-TH')}</span>
+                          <span>เวลา</span>
+                          <span className="w-24 border-b border-dotted border-black ml-2 text-center text-blue-700">{new Date().toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'})}</span>
+                        </div>
+                        <div className="w-1/3 p-2 flex items-center">
+                          <span>เลขที่</span>
+                          <span className="flex-1 border-b border-dotted border-black ml-2 text-center text-blue-700">{customerData?.jobId || ''}</span>
+                        </div>
+                      </div>
+
+                      {/* Row 2: Customer Info & Photo */}
+                      <div className="flex border-b border-black min-h-[260px] text-sm">
+                        {/* Left: Customer Info */}
+                        <div className="flex-1 p-3 border-r border-black flex flex-col gap-3">
+                          <div className="font-bold">ส่วนของผู้รับบริการ</div>
+                          <div className="flex">
+                            <span>ชื่อ - สกุล นาย/นาง/นางสาว</span>
+                            <span className="flex-1 border-b border-dotted border-black ml-2 pl-2 text-blue-700">{customerData?.firstName} {customerData?.lastName}</span>
+                          </div>
+                          <div className="flex">
+                            <span>บัตรประจำตัวประชาชน</span>
+                            <span className="flex-1 border-b border-dotted border-black ml-2 pl-2 text-blue-700">{customerData?.citizenId}</span>
+                          </div>
+                          <div className="flex">
+                            <span>ที่อยู่บ้านเลขที่</span>
+                            <span className="w-24 border-b border-dotted border-black mx-2 pl-2 text-blue-700 truncate">{customerData?.address?.split(' ')[0] || ''}</span>
+                            <span>หมู่ที่</span>
+                            <span className="flex-1 border-b border-dotted border-black ml-2"></span>
+                          </div>
+                          <div className="flex">
+                            <span>ตำบล</span>
+                            <span className="flex-1 border-b border-dotted border-black mx-2 text-blue-700 truncate">{(customerData?.address?.match(/ต\.([^\s]+)/) || [])[1] || ''}</span>
+                            <span>อำเภอ</span>
+                            <span className="flex-1 border-b border-dotted border-black ml-2 text-blue-700 truncate">{(customerData?.address?.match(/อ\.([^\s]+)/) || [])[1] || ''}</span>
+                          </div>
+                          <div className="flex">
+                            <span>จังหวัด</span>
+                            <span className="flex-1 border-b border-dotted border-black mx-2 text-blue-700 truncate">{(customerData?.address?.match(/จ\.([^\s]+)/) || [])[1] || ''}</span>
+                            <span>โทรศัพท์</span>
+                            <span className="flex-1 border-b border-dotted border-black ml-2 pl-2 text-blue-700">{phone || ''}</span>
+                          </div>
+                          <div className="flex">
+                            <span>สิ่งของที่นำมาซ่อม</span>
+                            <span className="flex-1 border-b border-dotted border-black ml-2 pl-2 text-blue-700">{productDetail}</span>
+                          </div>
+                          <div>
+                            <div>ประเภทเครื่องใช้ที่ซ่อม</div>
+                            <div className="grid grid-cols-2 gap-2 mt-2 ml-4">
+                              <label className="flex items-center gap-2"><input type="checkbox" className="w-4 h-4 print:appearance-none print:w-4 print:h-4 print:border print:border-black print:checked:bg-black" defaultChecked={productType === 'เครื่องมือการเกษตร'} /> เครื่องมือ/เครื่องจักรกลการเกษตร</label>
+                              <label className="flex items-center gap-2"><input type="checkbox" className="w-4 h-4 print:appearance-none print:w-4 print:h-4 print:border print:border-black print:checked:bg-black" defaultChecked={['พัดลม', 'เตารีด', 'เครื่องใช้ไฟฟ้า'].includes(productType)} /> เครื่องใช้ไฟฟ้า/เครื่องใช้ในครัวเรือน</label>
+                              <label className="flex items-center gap-2"><input type="checkbox" className="w-4 h-4 print:appearance-none print:w-4 print:h-4 print:border print:border-black print:checked:bg-black" defaultChecked={productType === 'ยานพาหนะ'} /> ยานพาหนะ</label>
+                              <div className="flex items-center gap-2">
+                                <input type="checkbox" className="w-4 h-4 print:appearance-none print:w-4 print:h-4 print:border print:border-black print:checked:bg-black" defaultChecked={!['เครื่องมือการเกษตร', 'พัดลม', 'เตารีด', 'ยานพาหนะ', 'เครื่องใช้ไฟฟ้า'].includes(productType) && productType !== ''} /> 
+                                <span>อื่น ๆ (โปรดระบุ)</span>
+                                <span className="flex-1 border-b border-dotted border-black truncate px-2 text-blue-700">{!['เครื่องมือการเกษตร', 'พัดลม', 'เตารีด', 'ยานพาหนะ', 'เครื่องใช้ไฟฟ้า'].includes(productType) ? productType : ''}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        {/* Right: ID Card Photo */}
+                        <div className="w-1/3 p-4 flex flex-col items-center justify-center relative">
+                          {customerData?.photo ? (
+                            <img src={customerData.photo} alt="ID Card" className="max-w-[140px] max-h-[180px] object-cover border-2 border-gray-400 p-1" />
+                          ) : (
+                            <div className="w-[140px] h-[180px] border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-sm text-center px-4">
+                              (แปะรูปถ่าย หรือสำเนาบัตร)
+                            </div>
+                          )}
+                          <div className="mt-4 text-sm text-center">( สำเนาบัตรประชาชน ผู้ใช้บริการ )</div>
+                        </div>
+                      </div>
+
+                      {/* Row 3: Symptoms, Condition, Accessories */}
+                      <div className="flex border-b border-black text-sm">
+                        <div className="flex-1 p-2 border-r border-black flex flex-col items-center min-h-[100px]">
+                          <span className="font-bold mb-2">อาการเสีย</span>
+                          <div className="w-full text-left pl-2">
+                            <div>1. <span className="border-b border-dotted border-black inline-block w-11/12 pl-2 text-blue-700">{symptoms}</span></div>
+                            <div className="mt-3">2. <span className="border-b border-dotted border-black inline-block w-11/12"></span></div>
+                          </div>
+                        </div>
+                        <div className="flex-1 p-2 border-r border-black flex flex-col items-center">
+                          <span className="font-bold mb-2">สภาพเครื่องใช้ที่นำมาซ่อม</span>
+                          <div className="w-full text-left pl-2">
+                            <div>1. <span className="border-b border-dotted border-black inline-block w-11/12"></span></div>
+                            <div className="mt-3">2. <span className="border-b border-dotted border-black inline-block w-11/12"></span></div>
+                          </div>
+                        </div>
+                        <div className="flex-1 p-2 flex flex-col items-center">
+                          <span className="font-bold mb-2">อุปกรณ์ที่ติดมาด้วย</span>
+                          <div className="w-full text-left pl-2">
+                            <div>1. <span className="border-b border-dotted border-black inline-block w-11/12"></span></div>
+                            <div className="mt-3">2. <span className="border-b border-dotted border-black inline-block w-11/12"></span></div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Row 4: Details */}
+                      <div className="border-b border-black p-3 text-sm min-h-[80px]">
+                        <span className="font-bold">รายละเอียด</span>
+                        <div className="mt-5 border-b border-dotted border-black w-full"></div>
+                        <div className="mt-6 border-b border-dotted border-black w-full"></div>
+                      </div>
+
+                      {/* Row 5: Repair Details & Technician */}
+                      <div className="flex text-sm">
+                        <div className="flex-1 p-3 border-r border-black flex flex-col gap-5">
+                          <div className="flex mt-2">
+                            <span className="font-bold w-32">รายละเอียดการซ่อม</span>
+                            <span className="flex-1 border-b border-dotted border-black"></span>
+                          </div>
+                          <div className="flex">
+                            <span className="font-bold w-24">วันที่เริ่มซ่อม</span>
+                            <span className="flex-1 border-b border-dotted border-black mx-2"></span>
+                            <span className="font-bold">เวลา</span>
+                            <span className="flex-1 border-b border-dotted border-black ml-2"></span>
+                          </div>
+                          <div className="flex mb-2">
+                            <span className="font-bold w-24">วันที่ซ่อมเสร็จ</span>
+                            <span className="flex-1 border-b border-dotted border-black mx-2"></span>
+                            <span className="font-bold">เวลา</span>
+                            <span className="flex-1 border-b border-dotted border-black ml-2"></span>
+                          </div>
+                        </div>
+                        <div className="flex-1 p-3 flex flex-col gap-4 text-center">
+                          <div className="font-bold">ผู้ดำเนินการซ่อม / ตรวจเช็ค</div>
+                          <div className="flex text-left">
+                            <span className="w-16">ชื่อ-สกุล</span>
+                            <span className="flex-1 border-b border-dotted border-black ml-2"></span>
+                          </div>
+                          <div className="flex text-left">
+                            <span className="w-40">บัตรประจำตัวประชาชนเลขที่</span>
+                            <span className="flex-1 border-b border-dotted border-black ml-2"></span>
+                          </div>
+                          <div className="flex text-left">
+                            <span className="w-16">สาขาวิชา</span>
+                            <span className="flex-1 border-b border-dotted border-black ml-2"></span>
+                          </div>
+                          <div className="flex text-left">
+                            <span className="w-20">ครูสาขาวิชา</span>
+                            <span className="flex-1 border-b border-dotted border-black ml-2"></span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div className="mt-8 border-t pt-4">
-                      <p className="font-bold mb-4">ผลการประเมินการซ่อม (ส่วนของช่าง):</p>
-                      <p className="mb-2">[ ] ซ่อมได้คุ้มค่า</p>
-                      <p className="mb-2">[ ] ซ่อมไม่คุ้มค่า / อะไหล่แพงเกินไป</p>
-                      <p>[ ] ส่งมอบของคืนลูกค้าแล้ว ลงชื่อ ......................................</p>
+
+                    {/* Footer Signatures */}
+                    <div className="flex justify-between mt-8 px-4 text-sm">
+                      <div className="flex-1 text-center">
+                        <div className="flex justify-center items-end">
+                          <span className="font-bold">ผู้รับเครื่อง</span>
+                          <span className="w-40 border-b border-dotted border-black mx-2"></span>
+                          <span className="font-bold">วันที่</span>
+                          <span className="w-24 border-b border-dotted border-black ml-2"></span>
+                        </div>
+                      </div>
+                      <div className="flex-1 text-center">
+                        <div className="flex justify-center items-end">
+                          <span className="font-bold">ผู้ส่งมอบเครื่อง</span>
+                          <span className="w-40 border-b border-dotted border-black mx-2"></span>
+                          <span className="font-bold">วันที่</span>
+                          <span className="w-24 border-b border-dotted border-black ml-2"></span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
