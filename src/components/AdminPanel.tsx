@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function AdminPanel() {
   const [jobs, setJobs] = useState<any[]>([]);
@@ -315,6 +316,18 @@ export default function AdminPanel() {
           <div className="mt-8 p-4 bg-gray-50 rounded border">
             <p className="text-sm font-bold text-gray-700">ตัวอย่างรหัสคิวใบงานถัดไป:</p>
             <p className="text-2xl text-blue-600 font-mono mt-2">{prefix}{queueNumber.padStart(4, '0')}</p>
+          </div>
+
+          <h2 className="text-xl font-semibold mb-6 mt-10 border-b pb-2">ระบบสแกนสำหรับช่าง (QR Code)</h2>
+          <div className="p-6 bg-white border rounded-lg flex flex-col items-center">
+            <p className="text-sm text-gray-600 mb-4 text-center">
+              ให้ช่างซ่อมใช้โทรศัพท์มือถือสแกน QR Code นี้ (ต้องต่อ WiFi เดียวกัน)<br/>
+              เพื่อบันทึกผลการซ่อม (ซ่อมได้ / ซ่อมไม่ได้)
+            </p>
+            <QRCodeSVG value={typeof window !== 'undefined' ? `${window.location.origin}/technician` : ''} size={200} />
+            <a href="/technician" target="_blank" className="mt-4 text-blue-600 underline text-sm">
+              เปิดหน้าต่างสำหรับช่าง
+            </a>
           </div>
         </div>
       )}
