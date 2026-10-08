@@ -95,12 +95,6 @@ export default function TechnicianPage() {
           <h2 className="text-sm text-gray-600 mt-1">สำหรับช่างผู้ปฏิบัติงาน</h2>
         </div>
 
-        {message && (
-          <div className={`mb-4 p-3 rounded text-sm ${message.includes('สำเร็จ') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-            {message}
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">รหัสคิวงาน (Job ID) *</label>
@@ -112,19 +106,32 @@ export default function TechnicianPage() {
                 onChange={(e) => {
                   setJobId(e.target.value.toUpperCase());
                   setJobDetails(null);
+                  setMessage('');
                 }}
                 placeholder="เช่น FIX-0001"
                 required
               />
               <button
                 type="button"
-                onClick={checkJob}
-                disabled={checking || !jobId}
+                onClick={() => {
+                  if (!jobId) {
+                    setMessage('กรุณากรอกรหัสคิวงานก่อนกดตรวจสอบ');
+                    return;
+                  }
+                  checkJob();
+                }}
+                disabled={checking}
                 className="bg-blue-600 text-white px-4 py-2 rounded-md font-medium text-sm hover:bg-blue-700 active:bg-blue-800 active:scale-95 transition-all whitespace-nowrap disabled:bg-gray-400 disabled:active:scale-100 touch-manipulation"
               >
                 {checking ? 'รอสักครู่...' : 'ตรวจสอบ'}
               </button>
             </div>
+            
+            {message && (
+              <div className={`mt-3 p-3 rounded-md text-sm font-medium text-center ${message.includes('สำเร็จ') ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
+                {message}
+              </div>
+            )}
           </div>
 
           {jobDetails && (
