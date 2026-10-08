@@ -35,6 +35,10 @@ IF NOT EXIST "node_modules\" (
     echo INFO: First time setup. Downloading system files. Please wait 2-3 minutes...
     call npm install
     call npx prisma generate
+)
+
+IF NOT EXIST "prisma\dev.db" (
+    echo INFO: Creating local database...
     call npx prisma db push
 )
 
