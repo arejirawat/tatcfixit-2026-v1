@@ -9,6 +9,8 @@ export default function AdminPanel() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [prefix, setPrefix] = useState('FIX-');
   const [queueNumber, setQueueNumber] = useState('1');
+  const [centerName, setCenterName] = useState('วิทยาลัยเทคนิคสัตหีบ');
+  const [contactPhone, setContactPhone] = useState('');
   const [activeMenu, setActiveMenu] = useState('overview');
 
   const [unsyncedCounts, setUnsyncedCounts] = useState({ total: 0, customers: 0, jobs: 0, categories: 0 });
@@ -62,6 +64,8 @@ export default function AdminPanel() {
       data.settings.forEach((s: any) => {
         if (s.key === 'QUEUE_PREFIX') setPrefix(s.value);
         if (s.key === 'QUEUE_NUMBER') setQueueNumber(s.value);
+        if (s.key === 'CENTER_NAME') setCenterName(s.value);
+        if (s.key === 'CONTACT_PHONE') setContactPhone(s.value);
       });
     }
   };
@@ -261,7 +265,23 @@ export default function AdminPanel() {
 
       {activeMenu === 'queue' && (
         <div className="max-w-md">
-          <h2 className="text-xl font-semibold mb-6">ตั้งค่ารหัสคิวงาน (Job ID)</h2>
+          <h2 className="text-xl font-semibold mb-6 border-b pb-2">ข้อมูลศูนย์ซ่อม</h2>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อศูนย์ซ่อม (แสดงบนใบรับงาน / คูปอง)</label>
+            <div className="flex gap-2">
+              <input type="text" value={centerName} onChange={e => setCenterName(e.target.value)} className="border p-2 rounded w-full" placeholder="วิทยาลัยเทคนิคสัตหีบ" />
+              <button onClick={() => saveSetting('CENTER_NAME', centerName)} className="bg-blue-600 text-white px-4 rounded hover:bg-blue-700">บันทึก</button>
+            </div>
+          </div>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-1">เบอร์โทรศัพท์ติดต่อ (แสดงบนคูปองลูกค้า)</label>
+            <div className="flex gap-2">
+              <input type="text" value={contactPhone} onChange={e => setContactPhone(e.target.value)} className="border p-2 rounded w-full" placeholder="038-xxx-xxx" />
+              <button onClick={() => saveSetting('CONTACT_PHONE', contactPhone)} className="bg-blue-600 text-white px-4 rounded hover:bg-blue-700">บันทึก</button>
+            </div>
+          </div>
+
+          <h2 className="text-xl font-semibold mb-6 mt-10 border-b pb-2">ตั้งค่ารหัสคิวงาน (Job ID)</h2>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">ตัวอักษรนำหน้า (Prefix)</label>
             <div className="flex gap-2">

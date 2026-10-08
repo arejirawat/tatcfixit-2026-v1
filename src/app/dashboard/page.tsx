@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminPanel from '@/components/AdminPanel';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'register' | 'admin'>('register');
+  const [centerName, setCenterName] = useState('วิทยาลัยเทคนิคสัตหีบ');
+  const [contactPhone, setContactPhone] = useState('038-xxx-xxx');
   const [customerData, setCustomerData] = useState<any>(null);
   const [statusMsg, setStatusMsg] = useState('กรุณาเสียบบัตรประชาชนที่เครื่องอ่าน');
   const [isLoading, setIsLoading] = useState(false);
@@ -20,6 +22,24 @@ export default function Dashboard() {
   const [customerJobs, setCustomerJobs] = useState<any[]>([]);
   const [isFetchingJobs, setIsFetchingJobs] = useState(false);
   const [searchJobId, setSearchJobId] = useState('');
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/admin/settings');
+        const data = await res.json();
+        if (data.success) {
+          data.settings.forEach((s: any) => {
+            if (s.key === 'CENTER_NAME') setCenterName(s.value);
+            if (s.key === 'CONTACT_PHONE') setContactPhone(s.value);
+          });
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   const readCard = async () => {
     setIsLoading(true);
@@ -482,12 +502,17 @@ export default function Dashboard() {
                   {/* คูปองลูกค้า */}
                   <div className={`border-2 border-dashed border-gray-400 p-6 rounded w-80 mx-auto ${printMode && printMode !== 'coupon' ? 'hidden print:hidden' : 'block mb-8'}`}>
                     <h1 className="text-xl font-bold text-center mb-2">ใบคูปองซ่อม (ลูกค้า)</h1>
+                    <p className="text-center font-bold">{centerName}</p>
                     <p className="text-center text-xs mb-4 border-b pb-4">ศูนย์ซ่อมสร้างเพื่อชุมชน (Fix IT Center)</p>
                     <div className="grid grid-cols-1 gap-2 text-sm">
                       <div><span className="font-bold">รหัสคิวงาน:</span> {customerData?.jobId || 'กำลังออกรหัส...'}</div>
                       <div><span className="font-bold">ชื่อลูกค้า:</span> {customerData?.firstName} {customerData?.lastName}</div>
                       <div><span className="font-bold">วันที่ส่งซ่อม:</span> {new Date().toLocaleDateString('th-TH')}</div>
                       <div><span className="font-bold">สินค้าที่ซ่อม:</span> {productType} {productDetail}</div>
+                    </div>
+                    <div className="mt-4 pt-4 border-t text-center text-xs text-gray-600">
+                      <p>กรุณานำคูปองนี้มาด้วยเมื่อมารับเครื่อง</p>
+                      <p className="mt-1 font-bold">ติดต่อสอบถาม: {contactPhone}</p>
                     </div>
                   </div>
 
@@ -508,13 +533,11 @@ export default function Dashboard() {
                     {/* Header */}
                     <div className="text-center mb-6">
                       <div className="flex justify-center mb-2">
-                        <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white">
-                          <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        </div>
+                        <img src="/fixit_logo.jpg" alt="Fix IT Center Logo" className="h-20 object-contain" />
                       </div>
                       <h1 className="text-2xl font-bold">ศูนย์ซ่อมสร้างเพื่อชุมชน (Fix it Center)</h1>
                       <h2 className="text-xl font-bold mt-1">ใบรับงานซ่อม (Repair Form)</h2>
-                      <p className="mt-4 text-lg">ชื่อศูนย์ <span className="underline decoration-dotted underline-offset-4 px-12">วิทยาลัยเทคนิคสัตหีบ</span></p>
+                      <p className="mt-4 text-lg">ชื่อศูนย์ <span className="underline decoration-dotted underline-offset-4 px-12">{centerName}</span></p>
                     </div>
 
                     {/* Table Container */}
