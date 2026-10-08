@@ -3,14 +3,36 @@
 import { useState, useEffect } from 'react';
 
 export default function TechnicianPage() {
-  const [jobId, setJobId] = useState('');
+  const [jobIdPart, setJobIdPart] = useState('');
+  const [prefix, setPrefix] = useState('FIX-');
+  const [repairerName, setRepairerName] = useState('');
   const [repairNotes, setRepairNotes] = useState('');
   const [status, setStatus] = useState<'FIXED' | 'UNREPAIRABLE' | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-
   const [jobDetails, setJobDetails] = useState<any>(null);
   const [checking, setChecking] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => {
+    // Load saved settings
+    const savedName = localStorage.getItem('techName');
+    if (savedName) setRepairerName(savedName);
+    
+    const savedPrefix = localStorage.getItem('techPrefix');
+    if (savedPrefix) setPrefix(savedPrefix);
+
+    // Setup connection status listener
+    setIsOffline(!navigator.onLine);
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const getStatusText = (status: string) => {
     switch (status) {
@@ -26,9 +48,13 @@ export default function TechnicianPage() {
     }
   };
 
+  const getFullJobId = () => {
+    return `${prefix}${jobIdPart}`.trim();
+  };
+
   const checkJob = async () => {
-    if (!jobId) return;
-    const cleanId = jobId.trim();
+    if (!jobIdPart) return;
+    const cleanId = getFullJobId();
     setChecking(true);
     setMessage('');
     try {
@@ -47,7 +73,7 @@ export default function TechnicianPage() {
         setMessage('ไม่พบหมายเลขคิวงานนี้ในระบบ');
       }
     } catch (e) {
-      setMessage('เกิดข้อผิดพลาดในการตรวจสอบระบบ');
+      setMessage('เกิดข้อผิดพลาดในการตรวจสอบระบบ หรือขาดการเชื่อมต่อ');
     } finally {
       setChecking(false);
     }
@@ -55,8 +81,8 @@ export default function TechnicianPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!jobId || !status) {
-      setMessage('กรุณากรอกรหัสคิวงาน และเลือกสถานะการซ่อม');
+    if (!jobIdPart || !status || !repairerName) {
+      setMessage('กรุณากรอกรหัสคิวงาน, ชื่อช่าง และเลือกสถานะการซ่อม');
       return;
     }
 
@@ -64,16 +90,20 @@ export default function TechnicianPage() {
     setMessage('');
 
     try {
+      // Save settings to local storage for next time
+      localStorage.setItem('techName', repairerName);
+      localStorage.setItem('techPrefix', prefix);
+
       const response = await fetch(`/api/jobs/update-repair`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId, status, repairNotes })
+        body: JSON.stringify({ jobId: getFullJobId(), status, repairNotes, repairerName })
       });
 
       const data = await response.json();
       if (data.success) {
-        setMessage(`อัปเดตงาน ${jobId} สำเร็จเป็นสถานะ: ${status === 'FIXED' ? 'ซ่อมได้' : 'ซ่อมไม่ได้'}`);
-        setJobId('');
+        setMessage(`อัปเดตงาน ${getFullJobId()} สำเร็จเป็นสถานะ: ${status === 'FIXED' ? 'ซ่อมได้' : 'ซ่อมไม่ได้'}`);
+        setJobIdPart('');
         setRepairNotes('');
         setStatus(null);
         setJobDetails(null);
@@ -81,14 +111,21 @@ export default function TechnicianPage() {
         setMessage(`เกิดข้อผิดพลาด: ${data.message}`);
       }
     } catch (error) {
-      setMessage('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+      setMessage('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ หรือเครือข่ายมีปัญหา');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-8 flex justify-center items-start">
+    <div className="min-h-screen bg-gray-100 p-4 md:p-8 flex justify-center items-start relative">
+      {/* Offline Indicator */}
+      {isOffline && (
+        <div className="absolute top-0 left-0 w-full bg-red-500 text-white text-xs font-bold py-1 text-center shadow-md z-50">
+          ⚠️ ขาดการเชื่อมต่อเครือข่าย (Offline)
+        </div>
+      )}
+
       <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md mt-10">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800">อัปเดตผลการซ่อม</h1>
@@ -97,33 +134,58 @@ export default function TechnicianPage() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อช่างผู้ซ่อม *</label>
+            <input 
+              type="text" 
+              className="w-full px-3 py-2 border rounded-md text-black bg-gray-50 focus:bg-white"
+              value={repairerName}
+              onChange={(e) => setRepairerName(e.target.value)}
+              placeholder="เช่น นายสมชาย สุขใจ"
+              required
+            />
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">รหัสคิวงาน (Job ID) *</label>
             <div className="flex gap-2">
               <input 
                 type="text" 
-                className="w-full px-3 py-2 border rounded-md uppercase text-black bg-white"
-                value={jobId}
+                className="w-1/3 px-3 py-2 border rounded-md uppercase text-center text-black bg-gray-100"
+                value={prefix}
                 onChange={(e) => {
-                  setJobId(e.target.value.toUpperCase());
+                  setPrefix(e.target.value.toUpperCase());
                   setJobDetails(null);
                   setMessage('');
                 }}
-                placeholder="เช่น FIX-0001"
+                placeholder="FIX-"
+              />
+              <input 
+                type="text" 
+                className="w-2/3 px-3 py-2 border rounded-md text-black bg-white font-bold"
+                value={jobIdPart}
+                onChange={(e) => {
+                  setJobIdPart(e.target.value);
+                  setJobDetails(null);
+                  setMessage('');
+                }}
+                placeholder="เช่น 0001"
                 required
               />
+            </div>
+            <div className="mt-2">
               <button
                 type="button"
                 onClick={() => {
-                  if (!jobId) {
+                  if (!jobIdPart) {
                     setMessage('กรุณากรอกรหัสคิวงานก่อนกดตรวจสอบ');
                     return;
                   }
                   checkJob();
                 }}
                 disabled={checking}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md font-medium text-sm hover:bg-blue-700 active:bg-blue-800 active:scale-95 transition-all whitespace-nowrap disabled:bg-gray-400 disabled:active:scale-100 touch-manipulation"
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-md font-medium text-sm hover:bg-blue-700 active:bg-blue-800 active:scale-95 transition-all disabled:bg-gray-400 disabled:active:scale-100 touch-manipulation"
               >
-                {checking ? 'รอสักครู่...' : 'ตรวจสอบ'}
+                {checking ? 'รอสักครู่...' : 'ตรวจสอบข้อมูล'}
               </button>
             </div>
             

@@ -46,6 +46,7 @@ model Job {
   itemDetail   String   // รายละเอียดสิ่งของ
   symptoms     String   // อาการเสีย
   repairNotes  String?  // ผลการซ่อม/รายละเอียดการซ่อม
+  repairerName String?  // ชื่อช่างผู้ซ่อม
   status       String   @default("PENDING") // PENDING, REPAIRING, WAITING_RETURN, RETURNED
   isSynced     Boolean  @default(false)
   createdAt    DateTime @default(now())

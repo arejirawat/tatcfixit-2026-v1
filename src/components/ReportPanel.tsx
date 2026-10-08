@@ -296,6 +296,11 @@ export default function ReportPanel() {
                   <div><span className="font-semibold">ชนิดสิ่งของ:</span> {selectedJob.category?.name}</div>
                   <div><span className="font-semibold">รายละเอียดสิ่งของ:</span> {selectedJob.itemDetail || '-'}</div>
                   <div><span className="font-semibold">อาการเสีย:</span> <span className="text-red-600 font-medium">{selectedJob.symptoms}</span></div>
+                  {selectedJob.repairNotes && (
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <span className="font-semibold">ผลการตรวจสอบ/ซ่อมแซม:</span> <span className="text-blue-700">{selectedJob.repairNotes}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -306,8 +311,8 @@ export default function ReportPanel() {
                   <p className="text-sm mt-1">ผู้ใช้บริการ / ผู้ส่งซ่อม</p>
                 </div>
                 <div className="text-center">
-                  <div className="w-48 border-b border-black mb-2"></div>
-                  <p>( ..................................................... )</p>
+                  <div className="w-48 border-b border-black mb-2 text-center pb-1">{selectedJob.repairerName || ''}</div>
+                  <p>( {selectedJob.repairerName ? selectedJob.repairerName : '.....................................................'} )</p>
                   <p className="text-sm mt-1">ผู้รับเรื่อง / ช่างซ่อม</p>
                 </div>
               </div>

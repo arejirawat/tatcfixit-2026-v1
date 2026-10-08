@@ -5,9 +5,9 @@ const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   try {
-    const { jobId, status, repairNotes } = await request.json();
+    const { jobId, status, repairNotes, repairerName } = await request.json();
 
-    if (!jobId || !status) {
+    if (!jobId || !status || !repairerName) {
       return NextResponse.json({ success: false, message: 'กรุณาส่งข้อมูลให้ครบถ้วน' }, { status: 400 });
     }
 
@@ -28,7 +28,8 @@ export async function POST(request: Request) {
       where: { jobId },
       data: {
         status,
-        repairNotes
+        repairNotes,
+        repairerName
       }
     });
 
