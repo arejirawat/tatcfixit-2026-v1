@@ -28,7 +28,7 @@ IF %ERRORLEVEL% NEQ 0 (
 
 :: 3. Install Python Dependencies
 echo INFO: Checking Smartcard Reader dependencies...
-pip install pyscard >nul 2>&1
+call python -m pip install pyscard >nul 2>&1
 
 :: 4. Install Node.js Dependencies
 IF NOT EXIST "node_modules\" (
@@ -40,12 +40,12 @@ IF NOT EXIST "node_modules\" (
 
 :: 5. Start Python Agent
 echo INFO: Starting Smartcard Reader service (Port 8081)...
-start "Smartcard Agent" cmd /c "python agent.py"
+start "Smartcard Agent" cmd /k "python agent.py"
 
 :: 6. Start Web Server
 echo INFO: Starting Web Server (Port 3000)...
 echo INFO: If Windows Defender Firewall prompts, please click Allow Access.
-start "FixIT Web Server" cmd /c "npm run dev"
+start "FixIT Web Server" cmd /k "npm run dev"
 
 :: 7. Wait and open browser
 echo INFO: Preparing the web application... 
