@@ -517,53 +517,54 @@ export default function Dashboard() {
                   </div>
 
                   {/* ใบแนบสินค้า */}
-                  <div className={`border-2 border-dashed border-gray-400 p-6 rounded mx-auto text-black font-sans w-[450px] ${printMode && printMode !== 'attach' ? 'hidden print:hidden' : 'block mb-8'}`}>
-                    <div className="flex justify-end mb-4">
-                      <div className="text-blue-700 font-bold">เลขที่ <span className="border-b border-dotted border-blue-700 inline-block w-32 text-center">{customerData?.jobId || ''}</span></div>
+                  <div className={`border-2 border-dashed border-gray-400 p-4 rounded mx-auto text-black font-sans w-80 ${printMode && printMode !== 'attach' ? 'hidden print:hidden' : 'block mb-8'}`}>
+                    <h1 className="text-lg font-bold text-center mb-2">ใบส่งซ่อม (แนบสินค้า)</h1>
+                    <div className="flex justify-end mb-2 text-xs">
+                      <div className="text-blue-700 font-bold">เลขที่ <span className="border-b border-dotted border-blue-700 inline-block w-20 text-center">{customerData?.jobId || ''}</span></div>
                     </div>
-                    <div className="mb-2">
-                      <span className="font-bold">ชื่อ - สกุล</span>
-                      <span className="border-b border-dotted border-black inline-block w-64 ml-2 pl-2">{customerData?.firstName} {customerData?.lastName}</span>
+                    <div className="flex mb-1 text-xs">
+                      <span className="font-bold whitespace-nowrap">ชื่อ - สกุล</span>
+                      <span className="flex-1 border-b border-dotted border-black ml-2 pl-1 truncate">{customerData?.firstName} {customerData?.lastName}</span>
                     </div>
-                    <div className="mb-2">
-                      <span className="font-bold">โทรศัพท์</span>
-                      <span className="border-b border-dotted border-black inline-block w-64 ml-2 pl-2">{phone || ''}</span>
+                    <div className="flex mb-1 text-xs">
+                      <span className="font-bold whitespace-nowrap">โทรศัพท์</span>
+                      <span className="flex-1 border-b border-dotted border-black ml-2 pl-1 truncate">{phone || ''}</span>
                     </div>
-                    <div className="mb-4">
-                      <span className="font-bold">อาการเสีย</span>
-                      <span className="border-b border-dotted border-black inline-block w-64 ml-2 pl-2 truncate">{symptoms}</span>
+                    <div className="flex mb-4 text-xs">
+                      <span className="font-bold whitespace-nowrap">อาการเสีย</span>
+                      <span className="flex-1 border-b border-dotted border-black ml-2 pl-1 truncate">{symptoms}</span>
                     </div>
                     
-                    <table className="w-full border-collapse border border-black mb-4">
+                    <table className="w-full border-collapse border border-black mb-4 text-xs">
                       <thead>
                         <tr>
-                          <th className="border border-black p-2 font-normal">รายการซ่อม</th>
-                          <th className="border border-black p-2 font-normal w-24">ค่าอะไหล่</th>
+                          <th className="border border-black p-1 font-normal">รายการซ่อม</th>
+                          <th className="border border-black p-1 font-normal w-16">ค่าอะไหล่</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr><td className="border border-black h-8"></td><td className="border border-black"></td></tr>
-                        <tr><td className="border border-black h-8"></td><td className="border border-black"></td></tr>
-                        <tr><td className="border border-black h-8"></td><td className="border border-black"></td></tr>
+                        <tr><td className="border border-black h-6"></td><td className="border border-black"></td></tr>
+                        <tr><td className="border border-black h-6"></td><td className="border border-black"></td></tr>
+                        <tr><td className="border border-black h-6"></td><td className="border border-black"></td></tr>
                         <tr>
-                          <td className="border border-black p-2 text-center font-normal">รวมเงิน</td>
-                          <td className="border border-black p-2 text-center"></td>
+                          <td className="border border-black p-1 text-center font-normal">รวมเงิน</td>
+                          <td className="border border-black p-1 text-center"></td>
                         </tr>
                       </tbody>
                     </table>
 
-                    <div className="flex justify-around mb-6 mt-4">
-                      <label className="flex items-center gap-2">
-                        <input type="checkbox" className="w-5 h-5 print:appearance-none print:w-5 print:h-5 print:border-2 print:border-black" /> ซ่อมคุ้มค่า
+                    <div className="flex justify-between mb-4 mt-2 text-xs px-2">
+                      <label className="flex items-center gap-1">
+                        <input type="checkbox" className="w-4 h-4 print:appearance-none print:w-4 print:h-4 print:border print:border-black" /> ซ่อมคุ้มค่า
                       </label>
-                      <label className="flex items-center gap-2">
-                        <input type="checkbox" className="w-5 h-5 print:appearance-none print:w-5 print:h-5 print:border-2 print:border-black" /> ซ่อมไม่คุ้มค่า
+                      <label className="flex items-center gap-1">
+                        <input type="checkbox" className="w-4 h-4 print:appearance-none print:w-4 print:h-4 print:border print:border-black" /> ซ่อมไม่คุ้มค่า
                       </label>
                     </div>
 
-                    <div className="flex justify-center mt-6">
-                      <span className="mr-2">ลงชื่อ</span>
-                      <span className="border-b border-dotted border-black inline-block w-48 mx-2"></span>
+                    <div className="flex justify-center mt-4 text-xs">
+                      <span className="mr-1">ลงชื่อ</span>
+                      <span className="border-b border-dotted border-black inline-block w-24 mx-1"></span>
                       <span>ช่างผู้ประเมิน</span>
                     </div>
                   </div>
@@ -615,17 +616,17 @@ export default function Dashboard() {
                             <span>ที่อยู่บ้านเลขที่</span>
                             <span className="w-24 border-b border-dotted border-black mx-2 pl-2 text-blue-700 truncate">{customerData?.address?.split(' ')[0] || ''}</span>
                             <span>หมู่ที่</span>
-                            <span className="flex-1 border-b border-dotted border-black ml-2"></span>
+                            <span className="flex-1 border-b border-dotted border-black ml-2 pl-2 text-blue-700 truncate">{(customerData?.address?.match(/หมู่ที่\s*(\d+)/) || [])[1] || ''}</span>
                           </div>
                           <div className="flex">
                             <span>ตำบล</span>
-                            <span className="flex-1 border-b border-dotted border-black mx-2 text-blue-700 truncate">{(customerData?.address?.match(/ต\.([^\s]+)/) || [])[1] || ''}</span>
+                            <span className="flex-1 border-b border-dotted border-black mx-2 text-blue-700 truncate">{(customerData?.address?.match(/(?:ตำบล|แขวง)\s*([^\s]+)/) || [])[1] || ''}</span>
                             <span>อำเภอ</span>
-                            <span className="flex-1 border-b border-dotted border-black ml-2 text-blue-700 truncate">{(customerData?.address?.match(/อ\.([^\s]+)/) || [])[1] || ''}</span>
+                            <span className="flex-1 border-b border-dotted border-black ml-2 text-blue-700 truncate">{(customerData?.address?.match(/(?:อำเภอ|เขต)\s*([^\s]+)/) || [])[1] || ''}</span>
                           </div>
                           <div className="flex">
                             <span>จังหวัด</span>
-                            <span className="flex-1 border-b border-dotted border-black mx-2 text-blue-700 truncate">{(customerData?.address?.match(/จ\.([^\s]+)/) || [])[1] || ''}</span>
+                            <span className="flex-1 border-b border-dotted border-black mx-2 text-blue-700 truncate">{(customerData?.address?.match(/(?:จังหวัด)\s*([^\s]+)/) || [])[1] || ''}</span>
                             <span>โทรศัพท์</span>
                             <span className="flex-1 border-b border-dotted border-black ml-2 pl-2 text-blue-700">{phone || ''}</span>
                           </div>
@@ -716,10 +717,6 @@ export default function Dashboard() {
                           <div className="font-bold">ผู้ดำเนินการซ่อม / ตรวจเช็ค</div>
                           <div className="flex text-left">
                             <span className="w-16">ชื่อ-สกุล</span>
-                            <span className="flex-1 border-b border-dotted border-black ml-2"></span>
-                          </div>
-                          <div className="flex text-left">
-                            <span className="w-40">บัตรประจำตัวประชาชนเลขที่</span>
                             <span className="flex-1 border-b border-dotted border-black ml-2"></span>
                           </div>
                           <div className="flex text-left">
