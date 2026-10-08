@@ -240,6 +240,12 @@ export default function Dashboard() {
                 สรุปข้อมูล (Dashboard)
               </button>
               <button 
+                onClick={() => setActiveTab('stats')}
+                className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'stats' ? 'bg-blue-700' : 'hover:bg-blue-500'}`}
+              >
+                สถิติช่างซ่อม
+              </button>
+              <button 
                 onClick={() => {
                   if (activeTab === 'admin') return;
                   const password = prompt('กรุณากรอกรหัสผ่านเพื่อเข้าสู่โหมดผู้ดูแลระบบ:');
