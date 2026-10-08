@@ -217,7 +217,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-blue-600 text-white shadow-md print:hidden">
+      <nav className="bg-[#660000] text-white shadow-md print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <button 
@@ -229,19 +229,19 @@ export default function Dashboard() {
             <div className="flex space-x-4">
               <button 
                 onClick={() => {setActiveTab('register'); setStep(1);}}
-                className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'register' ? 'bg-blue-700' : 'hover:bg-blue-500'}`}
+                className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'register' ? 'bg-[#4a0000]' : 'hover:bg-[#880000]'}`}
               >
                 ลงทะเบียนผู้ใช้บริการ
               </button>
               <button 
                 onClick={() => setActiveTab('report')}
-                className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'report' ? 'bg-blue-700' : 'hover:bg-blue-500'}`}
+                className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'report' ? 'bg-[#4a0000]' : 'hover:bg-[#880000]'}`}
               >
                 สรุปข้อมูล (Dashboard)
               </button>
               <button 
                 onClick={() => setActiveTab('stats')}
-                className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'stats' ? 'bg-blue-700' : 'hover:bg-blue-500'}`}
+                className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'stats' ? 'bg-[#4a0000]' : 'hover:bg-[#880000]'}`}
               >
                 สถิติช่างซ่อม
               </button>
@@ -255,7 +255,7 @@ export default function Dashboard() {
                     alert('รหัสผ่านไม่ถูกต้อง');
                   }
                 }}
-                className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'admin' ? 'bg-blue-700' : 'hover:bg-blue-500'}`}
+                className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'admin' ? 'bg-[#4a0000]' : 'hover:bg-[#880000]'}`}
               >
                 จัดการฐานข้อมูล (Admin)
               </button>
@@ -282,7 +282,7 @@ export default function Dashboard() {
                       <button 
                         onClick={readCard}
                         disabled={isLoading}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:bg-gray-400"
+                        className="bg-blue-600 hover:bg-[#4a0000] text-white font-bold py-2 px-4 rounded disabled:bg-gray-400"
                       >
                         {isLoading ? 'กำลังอ่าน...' : 'อ่านบัตรประชาชน'}
                       </button>
@@ -359,7 +359,7 @@ export default function Dashboard() {
                           photo: null
                         });
                         setIsManualEntry(false);
-                      }} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">บันทึกข้อมูล</button>
+                      }} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-[#4a0000]">บันทึกข้อมูล</button>
                     </div>
                   </div>
                 ) : (
@@ -489,7 +489,7 @@ export default function Dashboard() {
                 </div>
                 <div className="mt-6 flex justify-between">
                   <button onClick={() => setStep(2)} className="text-gray-500 hover:text-gray-800 px-4 py-2">ย้อนกลับ</button>
-                  <button onClick={saveJob} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded">
+                  <button onClick={saveJob} className="bg-blue-600 hover:bg-[#4a0000] text-white font-bold py-2 px-6 rounded">
                     บันทึกและออกใบรับงาน
                   </button>
                 </div>
@@ -628,7 +628,7 @@ export default function Dashboard() {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                       พิมพ์ใบส่งซ่อมแนบของ (58mm)
                     </button>
-                    <button onClick={() => handlePrint('full')} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2">
+                    <button onClick={() => handlePrint('full')} className="bg-blue-600 hover:bg-[#4a0000] text-white font-bold py-2 px-4 rounded flex items-center gap-2">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                       พิมพ์ใบงานช่างฉบับเต็ม (A4)
                     </button>
