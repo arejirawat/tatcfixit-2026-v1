@@ -573,7 +573,7 @@ export default function Dashboard() {
                               {job.status === 'RETURNED_UNREPAIRABLE' && <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">ส่งคืนแล้ว (ซ่อมไม่ได้)</span>}
                               {job.status === 'FIXED' && <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">ซ่อมได้ (รอส่งคืน)</span>}
                               {job.status === 'UNREPAIRABLE' && <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">ซ่อมไม่ได้ (รอส่งคืน)</span>}
-                              {(job.status === 'PENDING' || job.status === 'REPAIRING' || job.status === 'WAITING_RETURN') && <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">กำลังซ่อม/รอมารับ</span>}
+                              {(job.status === 'PENDING' || job.status === 'REPAIRING' || job.status === 'WAITING_RETURN') && <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">กำลังซ่อม</span>}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-center space-x-2">
                               {!isReturned && (
