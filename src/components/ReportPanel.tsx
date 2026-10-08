@@ -9,6 +9,9 @@ export default function ReportPanel() {
   const [filterDate, setFilterDate] = useState<string>('ALL');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
+  // Popup state
+  const [selectedJob, setSelectedJob] = useState<any>(null);
+
   useEffect(() => {
     fetchJobs();
   }, []);
@@ -34,8 +37,7 @@ export default function ReportPanel() {
   // 1. Filter by Date First
   const filteredJobsByDate = jobs.filter(job => {
     if (filterDate === 'ALL') return true;
-    // job.createdAt is an ISO string, extract YYYY-MM-DD
-    const jobDate = new Date(job.createdAt).toLocaleDateString('en-CA'); // en-CA gives YYYY-MM-DD in local timezone
+    const jobDate = new Date(job.createdAt).toLocaleDateString('en-CA');
     return jobDate === filterDate;
   });
 
@@ -59,8 +61,21 @@ export default function ReportPanel() {
     return acc;
   }, {} as Record<string, number>);
 
-  // Sort categories by count
   const sortedCategories = Object.entries(categoryCount).sort((a, b) => b[1] - a[1]);
+
+  const customerCount = displayedJobs.reduce((acc, job) => {
+    if (job.customer) {
+      // Use name and last 4 digits of citizen ID for privacy/display
+      const citId = job.customer.citizenId || '0000000000000';
+      const maskedId = citId.length === 13 ? `...${citId.substring(9)}` : citId;
+      const key = `${job.customer.name} (${maskedId})`;
+      acc[key] = (acc[key] || 0) + 1;
+    }
+    return acc;
+  }, {} as Record<string, number>);
+
+  const sortedCustomers = Object.entries(customerCount).sort((a, b) => b[1] - a[1]);
+  const totalUniqueCustomers = Object.keys(customerCount).length;
 
   const getStatusText = (status: string) => {
     switch (status) {
@@ -82,20 +97,24 @@ export default function ReportPanel() {
     }
   };
 
+  const handlePrintJob = () => {
+    window.print();
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 max-w-7xl mx-auto mt-4 text-black">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b pb-4">
+    <div className="bg-white rounded-lg shadow-md p-6 max-w-7xl mx-auto mt-4 text-black relative">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b pb-4 print:hidden">
         <h2 className="text-2xl font-bold text-gray-800">สรุปข้อมูลการซ่อม (Dashboard)</h2>
         
         {/* Date Filter */}
-        <div className="flex items-center space-x-2 mt-4 md:mt-0 bg-gray-100 p-2 rounded-lg print:hidden">
+        <div className="flex items-center space-x-2 mt-4 md:mt-0 bg-gray-100 p-2 rounded-lg">
           <label className="font-bold text-sm text-gray-700">ดูข้อมูลวันที่:</label>
           <input 
             type="date" 
             value={filterDate === 'ALL' ? '' : filterDate}
             onChange={(e) => {
               setFilterDate(e.target.value || 'ALL');
-              setFilterStatus('ALL'); // Reset status filter when date changes
+              setFilterStatus('ALL');
             }}
             className="border border-gray-300 rounded px-2 py-1 text-sm"
           />
@@ -116,6 +135,7 @@ export default function ReportPanel() {
         >
           <div className="text-sm text-blue-800 font-bold">จำนวนงานทั้งหมด</div>
           <div className="text-3xl font-black text-blue-700">{totalJobs}</div>
+          <div className="text-xs text-blue-600 mt-1">จากลูกค้าทั้งหมด {totalUniqueCustomers} คน</div>
         </div>
         
         <div 
@@ -143,50 +163,68 @@ export default function ReportPanel() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 print:hidden">
         {/* Category Breakdown */}
         <div className="md:col-span-1 bg-gray-50 p-4 rounded border">
-          <h3 className="font-bold text-lg mb-4 border-b pb-2 flex justify-between items-center">
+          <h3 className="font-bold text-sm mb-4 border-b pb-2 flex justify-between items-center text-gray-700">
             แยกตามชนิดสิ่งของ 
-            {filterStatus !== 'ALL' && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">ตัวกรองทำงาน</span>}
           </h3>
           <ul className="space-y-2 max-h-96 overflow-y-auto">
             {sortedCategories.map(([cat, count]) => (
-              <li key={cat} className="flex justify-between items-center bg-white p-2 border rounded shadow-sm">
-                <span>{cat}</span>
+              <li key={cat} className="flex justify-between items-center bg-white p-2 border rounded shadow-sm text-sm">
+                <span className="truncate mr-2">{cat}</span>
                 <span className="font-bold bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-xs">{count}</span>
               </li>
             ))}
-            {sortedCategories.length === 0 && <li className="text-gray-500 text-center py-4">ไม่มีข้อมูล</li>}
+            {sortedCategories.length === 0 && <li className="text-gray-500 text-center py-4 text-sm">ไม่มีข้อมูล</li>}
+          </ul>
+        </div>
+
+        {/* Customer Breakdown */}
+        <div className="md:col-span-1 bg-gray-50 p-4 rounded border">
+          <h3 className="font-bold text-sm mb-4 border-b pb-2 flex justify-between items-center text-gray-700">
+            ผู้ใช้บริการ (คน)
+            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{totalUniqueCustomers}</span>
+          </h3>
+          <ul className="space-y-2 max-h-96 overflow-y-auto">
+            {sortedCustomers.map(([customerKey, count]) => (
+              <li key={customerKey} className="flex justify-between items-center bg-white p-2 border rounded shadow-sm text-xs">
+                <span className="truncate mr-2" title={customerKey}>{customerKey}</span>
+                <span className="font-bold bg-blue-50 text-blue-800 px-2 py-1 rounded-full">{count}</span>
+              </li>
+            ))}
+            {sortedCustomers.length === 0 && <li className="text-gray-500 text-center py-4 text-sm">ไม่มีข้อมูล</li>}
           </ul>
         </div>
 
         {/* Recent Jobs Table */}
         <div className="md:col-span-2 bg-gray-50 p-4 rounded border">
-          <h3 className="font-bold text-lg mb-4 border-b pb-2 flex justify-between items-center">
+          <h3 className="font-bold text-sm mb-4 border-b pb-2 flex justify-between items-center text-gray-700">
             รายการงานซ่อม 
-            <span className="text-sm font-normal text-gray-500">
-              พบ {displayedJobs.length} รายการ
+            <span className="text-xs font-normal text-gray-500">
+              พบ {displayedJobs.length} รายการ (คลิกเพื่อดูใบงาน)
             </span>
           </h3>
           <div className="overflow-x-auto max-h-96 overflow-y-auto">
             <table className="min-w-full text-left text-sm">
-              <thead className="bg-gray-200 sticky top-0">
+              <thead className="bg-gray-200 sticky top-0 shadow-sm">
                 <tr>
                   <th className="p-2 border">รหัสงาน</th>
                   <th className="p-2 border">ลูกค้า</th>
                   <th className="p-2 border">สิ่งของ</th>
-                  <th className="p-2 border">วันที่</th>
                   <th className="p-2 border">สถานะ</th>
                 </tr>
               </thead>
               <tbody>
                 {displayedJobs.map(job => (
-                  <tr key={job.id} className="border-b bg-white hover:bg-gray-50 transition-colors">
+                  <tr 
+                    key={job.id} 
+                    onClick={() => setSelectedJob(job)}
+                    className="border-b bg-white hover:bg-blue-50 transition-colors cursor-pointer"
+                  >
                     <td className="p-2 border font-mono text-blue-700">{job.jobId}</td>
-                    <td className="p-2 border">{job.customer?.name}</td>
-                    <td className="p-2 border">{job.category?.name}</td>
-                    <td className="p-2 border text-xs">{new Date(job.createdAt).toLocaleString('th-TH')}</td>
+                    <td className="p-2 border truncate max-w-[100px]">{job.customer?.name}</td>
+                    <td className="p-2 border truncate max-w-[100px]">{job.category?.name}</td>
                     <td className="p-2 border">
                       <span className={`px-2 py-1 rounded text-[10px] font-bold whitespace-nowrap ${getStatusColor(job.status)}`}>
                         {getStatusText(job.status)}
@@ -196,7 +234,7 @@ export default function ReportPanel() {
                 ))}
                 {displayedJobs.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="p-4 text-center text-gray-500 bg-white">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td>
+                    <td colSpan={4} className="p-4 text-center text-gray-500 bg-white">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td>
                   </tr>
                 )}
               </tbody>
@@ -205,12 +243,91 @@ export default function ReportPanel() {
         </div>
       </div>
       
-      <div className="text-right">
-        <button onClick={() => window.print()} className="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded print:hidden flex items-center justify-center ml-auto gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-          พิมพ์รายงานนี้
-        </button>
-      </div>
+      {/* Modal / Popup for Job Details */}
+      {selectedJob && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 print:p-0 print:bg-white print:static print:inset-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col print:shadow-none print:max-h-none print:w-full">
+            <div className="p-4 border-b flex justify-between items-center print:hidden bg-gray-100 rounded-t-lg">
+              <h3 className="font-bold text-lg text-gray-800">รายละเอียดใบรับงาน: {selectedJob.jobId}</h3>
+              <div className="space-x-2">
+                <button onClick={handlePrintJob} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm shadow">
+                  พิมพ์หน้านี้
+                </button>
+                <button onClick={() => setSelectedJob(null)} className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1 rounded text-sm shadow">
+                  ปิด
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-8 overflow-y-auto print:p-0 text-black">
+              {/* Receipt Layout inside Modal */}
+              <div className="text-center mb-6">
+                <h1 className="text-2xl font-bold">ใบรับงานซ่อม (Repair Form)</h1>
+                <p className="mt-1 text-gray-600">รหัสงาน: {selectedJob.jobId} | วันที่รับงาน: {new Date(selectedJob.createdAt).toLocaleDateString('th-TH')}</p>
+                <p className="text-gray-600 text-sm mt-1">สถานะปัจจุบัน: <span className={`font-bold px-2 py-1 rounded ${getStatusColor(selectedJob.status)}`}>{getStatusText(selectedJob.status)}</span></p>
+              </div>
+              
+              <div className="border border-gray-400 rounded p-6 mb-6">
+                <h2 className="font-bold border-b pb-2 mb-4 text-lg">ข้อมูลผู้ใช้บริการ</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><span className="font-semibold">ชื่อ-สกุล:</span> {selectedJob.customer?.name}</div>
+                  <div><span className="font-semibold">บัตรประชาชน:</span> {selectedJob.customer?.citizenId}</div>
+                  <div className="col-span-2"><span className="font-semibold">ที่อยู่:</span> {selectedJob.customer?.address || '-'}</div>
+                  <div><span className="font-semibold">เบอร์โทรศัพท์:</span> {selectedJob.customer?.phone || '-'}</div>
+                </div>
+              </div>
+
+              <div className="border border-gray-400 rounded p-6 mb-6">
+                <h2 className="font-bold border-b pb-2 mb-4 text-lg">ข้อมูลการซ่อม</h2>
+                <div className="grid grid-cols-1 gap-4">
+                  <div><span className="font-semibold">ชนิดสิ่งของ:</span> {selectedJob.category?.name}</div>
+                  <div><span className="font-semibold">รายละเอียดสิ่งของ:</span> {selectedJob.itemDetail || '-'}</div>
+                  <div><span className="font-semibold">อาการเสีย:</span> <span className="text-red-600 font-medium">{selectedJob.symptoms}</span></div>
+                </div>
+              </div>
+
+              <div className="mt-8 flex justify-between items-end px-10">
+                <div className="text-center">
+                  <div className="w-48 border-b border-black mb-2"></div>
+                  <p>( {selectedJob.customer?.name} )</p>
+                  <p className="text-sm mt-1">ผู้ใช้บริการ / ผู้ส่งซ่อม</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-48 border-b border-black mb-2"></div>
+                  <p>( ..................................................... )</p>
+                  <p className="text-sm mt-1">ผู้รับเรื่อง / ช่างซ่อม</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hidden container just for full page printing logic */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @media print {
+          ${selectedJob ? `
+          body * {
+            visibility: hidden;
+          }
+          .fixed, .fixed * {
+            visibility: visible;
+          }
+          .fixed {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            border: none;
+            box-shadow: none;
+          }
+          ` : `
+          .print\\:hidden {
+            display: none !important;
+          }
+          `}
+        }
+      `}} />
     </div>
   );
 }
