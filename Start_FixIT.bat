@@ -28,7 +28,7 @@ IF %ERRORLEVEL% NEQ 0 (
 
 :: 3. Install Python Dependencies
 echo INFO: Checking Smartcard Reader dependencies...
-call python -m pip install pyscard >nul 2>&1
+call python -m pip install pyscard flask flask-cors >nul 2>&1
 
 :: 4. Install Node.js Dependencies
 IF NOT EXIST "node_modules\" (
