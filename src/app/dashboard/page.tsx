@@ -519,7 +519,7 @@ export default function Dashboard() {
                           // Filter Status
                           if (returnFilterStatus === 'WAITING_RETURN' && !['WAITING_RETURN', 'FIXED', 'UNREPAIRABLE'].includes(job.status)) return false;
                           if (returnFilterStatus === 'PENDING_REPAIRING' && !['PENDING', 'REPAIRING'].includes(job.status)) return false;
-                          if (returnFilterStatus === 'RETURNED' && job.status !== 'RETURNED') return false;
+                          if (returnFilterStatus === 'RETURNED' && !job.status.startsWith('RETURNED')) return false;
                           // Filter Search Text
                           if (returnSearchText) {
                             const searchLower = returnSearchText.toLowerCase();
@@ -530,8 +530,10 @@ export default function Dashboard() {
                             if (!matchId && !matchCat && !matchDetail && !matchCustomer) return false;
                           }
                           return true;
-                        }).map((job) => (
-                          <tr key={job.jobId} className={job.status === 'RETURNED' ? 'bg-green-50' : ''}>
+                        }).map((job) => {
+                          const isReturned = job.status.startsWith('RETURNED');
+                          return (
+                          <tr key={job.jobId} className={isReturned ? 'bg-green-50' : ''}>
                             <td className="px-6 py-4 whitespace-nowrap font-medium">{job.jobId}</td>
                             <td className="px-6 py-4 whitespace-nowrap">{job.customer?.name || '-'}</td>
                             <td className="px-6 py-4">{job.category?.name} {job.itemDetail}</td>
@@ -540,25 +542,34 @@ export default function Dashboard() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               {job.status === 'RETURNED' && <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">ส่งมอบคืนแล้ว</span>}
+                              {job.status === 'RETURNED_FIXED' && <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">ส่งคืนแล้ว (ซ่อมได้)</span>}
+                              {job.status === 'RETURNED_UNREPAIRABLE' && <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">ส่งคืนแล้ว (ซ่อมไม่ได้)</span>}
                               {job.status === 'FIXED' && <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">ซ่อมได้ (รอส่งคืน)</span>}
                               {job.status === 'UNREPAIRABLE' && <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">ซ่อมไม่ได้ (รอส่งคืน)</span>}
                               {(job.status === 'PENDING' || job.status === 'REPAIRING' || job.status === 'WAITING_RETURN') && <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">กำลังซ่อม/รอมารับ</span>}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-center space-x-2">
-                              {job.status !== 'RETURNED' && (
+                              {!isReturned && (
                                 <>
                                   {job.status !== 'FIXED' && job.status !== 'UNREPAIRABLE' && (
                                     <>
-                                      <button onClick={() => updateJobStatus(job.jobId, 'FIXED', 'ยืนยันว่าซ่อมเสร็จแล้ว (ซ่อมได้)?')} className="text-white bg-blue-500 hover:bg-blue-600 px-2 py-1 rounded text-xs font-medium">ซ่อมได้</button>
-                                      <button onClick={() => updateJobStatus(job.jobId, 'UNREPAIRABLE', 'ยืนยันว่าไม่สามารถซ่อมได้ (ซ่อมไม่ได้)?')} className="text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded text-xs font-medium">ซ่อมไม่ได้</button>
+                                      <button onClick={() => updateJobStatus(job.jobId, 'FIXED', 'ยืนยันว่าซ่อมเสร็จแล้ว (ซ่อมได้)?')} className="text-white bg-blue-500 hover:bg-blue-600 px-2 py-1 rounded text-xs font-medium">แจ้งซ่อมได้</button>
+                                      <button onClick={() => updateJobStatus(job.jobId, 'UNREPAIRABLE', 'ยืนยันว่าไม่สามารถซ่อมได้ (ซ่อมไม่ได้)?')} className="text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded text-xs font-medium">แจ้งซ่อมไม่ได้</button>
                                     </>
                                   )}
-                                  <button onClick={() => updateJobStatus(job.jobId, 'RETURNED', 'ยืนยันการส่งมอบคืนสิ่งของให้ลูกค้า?')} className="text-white bg-green-600 hover:bg-green-700 px-2 py-1 rounded text-xs font-medium">ส่งมอบคืน</button>
+                                  {(job.status === 'FIXED' || job.status === 'UNREPAIRABLE') && (
+                                    <button 
+                                      onClick={() => updateJobStatus(job.jobId, job.status === 'FIXED' ? 'RETURNED_FIXED' : 'RETURNED_UNREPAIRABLE', 'ยืนยันการส่งมอบคืนสิ่งของให้ลูกค้า?')} 
+                                      className="text-white bg-green-600 hover:bg-green-700 px-2 py-1 rounded text-xs font-medium"
+                                    >
+                                      ส่งมอบคืน
+                                    </button>
+                                  )}
                                 </>
                               )}
                             </td>
                           </tr>
-                        ))}
+                        )})}
                       </tbody>
                     </table>
                   )}

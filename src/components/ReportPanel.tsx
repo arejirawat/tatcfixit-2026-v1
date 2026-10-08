@@ -53,6 +53,7 @@ export default function ReportPanel() {
     if (filterStatus === 'ALL') return true;
     if (filterStatus === 'PENDING_REPAIRING') return job.status === 'PENDING' || job.status === 'REPAIRING';
     if (filterStatus === 'WAITING_RETURN') return job.status === 'WAITING_RETURN' || job.status === 'FIXED' || job.status === 'UNREPAIRABLE';
+    if (filterStatus === 'RETURNED') return job.status.startsWith('RETURNED');
     return job.status === filterStatus;
   });
 
@@ -86,6 +87,8 @@ export default function ReportPanel() {
       case 'FIXED': return 'ซ่อมได้ (รอส่งคืน)';
       case 'UNREPAIRABLE': return 'ซ่อมไม่ได้ (รอส่งคืน)';
       case 'RETURNED': return 'ส่งคืนแล้ว';
+      case 'RETURNED_FIXED': return 'ส่งคืนแล้ว (ซ่อมได้)';
+      case 'RETURNED_UNREPAIRABLE': return 'ส่งคืนแล้ว (ซ่อมไม่ได้)';
       default: return status;
     }
   };
@@ -98,6 +101,8 @@ export default function ReportPanel() {
       case 'FIXED': return 'bg-blue-100 text-blue-800';
       case 'UNREPAIRABLE': return 'bg-red-100 text-red-800';
       case 'RETURNED': return 'bg-green-100 text-green-800';
+      case 'RETURNED_FIXED': return 'bg-green-100 text-green-800';
+      case 'RETURNED_UNREPAIRABLE': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -164,7 +169,10 @@ export default function ReportPanel() {
           className={`p-4 rounded shadow-sm cursor-pointer transition-all duration-200 ${filterStatus === 'RETURNED' ? 'bg-green-100 border-l-4 border-green-600 ring-2 ring-green-300' : 'bg-green-50 border-l-4 border-green-400 hover:bg-green-100 opacity-80'}`}
         >
           <div className="text-sm text-green-800 font-bold">ส่งคืนเรียบร้อย</div>
-          <div className="text-3xl font-black text-green-700">{statusCount['RETURNED'] || 0}</div>
+          <div className="text-3xl font-black text-green-700">{(statusCount['RETURNED'] || 0) + (statusCount['RETURNED_FIXED'] || 0) + (statusCount['RETURNED_UNREPAIRABLE'] || 0)}</div>
+          <div className="text-xs text-green-700 mt-1">
+            ซ่อมได้ {(statusCount['RETURNED'] || 0) + (statusCount['RETURNED_FIXED'] || 0)} | ซ่อมไม่ได้ {statusCount['RETURNED_UNREPAIRABLE'] || 0}
+          </div>
         </div>
       </div>
 
