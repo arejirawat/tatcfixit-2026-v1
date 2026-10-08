@@ -9,6 +9,34 @@ export default function TechnicianPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
+  const [jobDetails, setJobDetails] = useState<any>(null);
+  const [checking, setChecking] = useState(false);
+
+  const checkJob = async () => {
+    if (!jobId) return;
+    setChecking(true);
+    setMessage('');
+    try {
+      const res = await fetch(`/api/jobs/search?jobId=${jobId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.job) {
+          setJobDetails(data.job);
+        } else {
+          setJobDetails(null);
+          setMessage('ไม่พบรหัสคิวงานนี้ในระบบ');
+        }
+      } else {
+        setJobDetails(null);
+        setMessage('ไม่พบรหัสคิวงานนี้ในระบบ');
+      }
+    } catch (e) {
+      setMessage('เกิดข้อผิดพลาดในการตรวจสอบ');
+    } finally {
+      setChecking(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!jobId || !status) {
@@ -32,6 +60,7 @@ export default function TechnicianPage() {
         setJobId('');
         setRepairNotes('');
         setStatus(null);
+        setJobDetails(null);
       } else {
         setMessage(`เกิดข้อผิดพลาด: ${data.message}`);
       }
@@ -59,15 +88,36 @@ export default function TechnicianPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">รหัสคิวงาน (Job ID) *</label>
-            <input 
-              type="text" 
-              className="w-full px-3 py-2 border rounded-md uppercase"
-              value={jobId}
-              onChange={(e) => setJobId(e.target.value.toUpperCase())}
-              placeholder="เช่น 2026-0001"
-              required
-            />
+            <div className="flex gap-2">
+              <input 
+                type="text" 
+                className="w-full px-3 py-2 border rounded-md uppercase"
+                value={jobId}
+                onChange={(e) => {
+                  setJobId(e.target.value.toUpperCase());
+                  setJobDetails(null);
+                }}
+                placeholder="เช่น FIX-0001"
+                required
+              />
+              <button
+                type="button"
+                onClick={checkJob}
+                disabled={checking || !jobId}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md font-medium text-sm hover:bg-blue-700 whitespace-nowrap disabled:bg-gray-400"
+              >
+                {checking ? 'รอสักครู่...' : 'ตรวจสอบ'}
+              </button>
+            </div>
           </div>
+
+          {jobDetails && (
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded-md text-sm">
+              <p><strong>ผู้แจ้งซ่อม:</strong> {jobDetails.customer?.name}</p>
+              <p><strong>สิ่งของ:</strong> {jobDetails.category?.name} {jobDetails.itemDetail}</p>
+              <p><strong>อาการเสีย:</strong> {jobDetails.symptoms}</p>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">รายละเอียด / ผลการซ่อม</label>

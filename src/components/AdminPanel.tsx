@@ -16,11 +16,13 @@ export default function AdminPanel() {
 
   const [unsyncedCounts, setUnsyncedCounts] = useState({ total: 0, customers: 0, jobs: 0, categories: 0 });
   const [isSyncing, setIsSyncing] = useState(false);
+  const [lanIp, setLanIp] = useState('');
 
   useEffect(() => {
     fetchJobs();
     fetchSettings();
     fetchSyncStats();
+    fetch('/api/admin/ip').then(res => res.json()).then(data => setLanIp(data.ip)).catch(() => setLanIp('localhost'));
   }, []);
 
   const fetchSyncStats = async () => {
@@ -324,7 +326,8 @@ export default function AdminPanel() {
               ให้ช่างซ่อมใช้โทรศัพท์มือถือสแกน QR Code นี้ (ต้องต่อ WiFi เดียวกัน)<br/>
               เพื่อบันทึกผลการซ่อม (ซ่อมได้ / ซ่อมไม่ได้)
             </p>
-            <QRCodeSVG value={typeof window !== 'undefined' ? `${window.location.origin}/technician` : ''} size={200} />
+            {lanIp && <QRCodeSVG value={`http://${lanIp}:3000/technician`} size={200} />}
+            <p className="mt-2 text-xs text-gray-500 font-mono">http://{lanIp}:3000/technician</p>
             <a href="/technician" target="_blank" className="mt-4 text-blue-600 underline text-sm">
               เปิดหน้าต่างสำหรับช่าง
             </a>
