@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import AdminPanel from '@/components/AdminPanel';
 import ReportPanel from '@/components/ReportPanel';
+import StatsPanel from '@/components/StatsPanel';
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<'register' | 'report' | 'admin'>('register');
+  const [activeTab, setActiveTab] = useState<'register' | 'report' | 'admin' | 'stats'>('register');
   const [centerName, setCenterName] = useState('วิทยาลัยเทคนิคสัตหีบ');
   const [contactPhone, setContactPhone] = useState('038-xxx-xxx');
   const [customerData, setCustomerData] = useState<any>(null);
@@ -898,9 +899,7 @@ export default function Dashboard() {
               </div>
             )}
           </div>
-        ) : activeTab === 'report' ? (
-          <ReportPanel />
-        ) : (
+        ) : activeTab === 'report' ? ( <ReportPanel /> ) : activeTab === 'stats' ? ( <StatsPanel /> ) : (
           <AdminPanel />
         )}
       </main>
