@@ -15,6 +15,7 @@ export default function Dashboard() {
   const [step, setStep] = useState(1);
   const [serviceType, setServiceType] = useState('');
   const [productType, setProductType] = useState('');
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
   const [productDetail, setProductDetail] = useState('');
   const [symptoms, setSymptoms] = useState('');
   const [phone, setPhone] = useState('');
@@ -34,12 +35,18 @@ export default function Dashboard() {
             if (s.key === 'CONTACT_PHONE') setContactPhone(s.value);
           });
         }
+
+        const catRes = await fetch('/api/categories');
+        const catData = await catRes.json();
+        if (catData.success) {
+          setCategories(catData.categories);
+        }
       } catch (e) {
         console.error(e);
       }
     };
     fetchSettings();
-  }, []);
+  }, [activeTab]);
 
   const readCard = async () => {
     setIsLoading(true);
@@ -104,6 +111,11 @@ export default function Dashboard() {
       if (data.success) {
         // อัปเดต customerData ให้มี jobId กลับมาเพื่อแสดงบนใบงาน
         setCustomerData({ ...customerData, jobId: data.job.jobId });
+        
+        if (productType && !categories.find(c => c.name === productType.trim())) {
+          setCategories(prev => [...prev, { id: 'new-' + Date.now(), name: productType.trim() }]);
+        }
+        
         setStep(4);
       } else {
         alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + data.message);
@@ -393,6 +405,9 @@ export default function Dashboard() {
                       <option value="คอมพิวเตอร์ / โน้ตบุ๊ก" />
                       <option value="ปลั๊กพ่วง / สายไฟ" />
                       <option value="โคมไฟ / หลอดไฟ" />
+                      {categories.filter(c => !['พัดลม', 'เตารีด', 'หม้อหุงข้าว', 'กาต้มน้ำร้อน', 'ไดร์เป่าผม', 'เครื่องปั่นน้ำผลไม้', 'ไมโครเวฟ', 'โทรทัศน์ / ทีวี', 'วิทยุ / ลำโพง', 'คอมพิวเตอร์ / โน้ตบุ๊ก', 'ปลั๊กพ่วง / สายไฟ', 'โคมไฟ / หลอดไฟ'].includes(c.name)).map(c => (
+                        <option key={c.id} value={c.name} />
+                      ))}
                     </datalist>
                   </div>
                   <div>
@@ -657,7 +672,14 @@ export default function Dashboard() {
                               (แปะรูปถ่าย หรือสำเนาบัตร)
                             </div>
                           )}
-                          <div className="mt-4 text-sm text-center">( สำเนาบัตรประชาชน ผู้ใช้บริการ )</div>
+                          <div className="mt-2 text-sm text-center">( สำเนาบัตรประชาชน ผู้ใช้บริการ )</div>
+                          <div className="mt-4 flex flex-col items-center">
+                            <div className="flex items-end">
+                              <span className="mr-2">ลงชื่อ</span>
+                              <span className="border-b border-dotted border-black inline-block w-32"></span>
+                            </div>
+                            <span className="mt-1 text-sm">ผู้รับบริการ</span>
+                          </div>
                         </div>
                       </div>
 
