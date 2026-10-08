@@ -32,7 +32,7 @@ call python -m pip install pyscard >nul 2>&1
 
 :: 4. Install Node.js Dependencies
 IF NOT EXIST "node_modules\" (
-    echo INFO: First time setup. Downloading system files (Please wait 2-3 minutes)...
+    echo INFO: First time setup. Downloading system files. Please wait 2-3 minutes...
     call npm install
     call npx prisma generate
     call npx prisma db push
