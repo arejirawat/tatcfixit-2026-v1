@@ -63,7 +63,7 @@ export default function ReportPanel() {
     return acc;
   }, {} as Record<string, number>);
 
-  const sortedCategories = Object.entries(categoryCount).sort((a, b) => b[1] - a[1]);
+  const sortedCategories = (Object.entries(categoryCount) as [string, number][]).sort((a, b) => b[1] - a[1]);
 
   const customerCount = displayedJobs.reduce((acc, job) => {
     if (job.customer) {
@@ -76,7 +76,7 @@ export default function ReportPanel() {
     return acc;
   }, {} as Record<string, number>);
 
-  const sortedCustomers = Object.entries(customerCount).sort((a, b) => b[1] - a[1]);
+  const sortedCustomers = (Object.entries(customerCount) as [string, number][]).sort((a, b) => b[1] - a[1]);
   const totalUniqueCustomers = Object.keys(customerCount).length;
 
   const getStatusText = (status: string) => {
