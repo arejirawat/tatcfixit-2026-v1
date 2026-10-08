@@ -515,7 +515,7 @@ export default function Dashboard() {
                 {/* ส่วนที่จะถูกพรินต์ออกมา */}
                 <div className="text-black">
                   {/* คูปองลูกค้า */}
-                  <div className={`border-2 border-dashed border-gray-400 print:border-black p-4 rounded w-[56mm] mx-auto text-black print:font-bold ${printMode && printMode !== 'coupon' ? 'hidden print:hidden' : 'block mb-8'}`}>
+                  <div className={`border-2 border-dashed border-gray-400 print:border-black p-4 rounded w-[57mm] mx-auto text-black print:font-bold ${printMode && printMode !== 'coupon' ? 'hidden print:hidden' : 'block mb-8'}`}>
                     <h1 className="text-xl font-bold text-center mb-2">ใบคูปองซ่อม (ลูกค้า)</h1>
                     <p className="text-center font-bold">{centerName}</p>
                     <p className="text-center text-[10px] mb-4 border-b border-gray-400 print:border-black pb-4">ศูนย์ซ่อมสร้างเพื่อชุมชน (Fix IT Center)</p>
@@ -532,7 +532,7 @@ export default function Dashboard() {
                   </div>
 
                   {/* ใบแนบสินค้า */}
-                  <div className={`border-2 border-dashed border-gray-400 print:border-black print:font-bold p-3 rounded mx-auto text-black font-sans w-[56mm] ${printMode && printMode !== 'attach' ? 'hidden print:hidden' : 'block mb-8'}`}>
+                  <div className={`border-2 border-dashed border-gray-400 print:border-black print:font-bold p-3 rounded mx-auto text-black font-sans w-[57mm] ${printMode && printMode !== 'attach' ? 'hidden print:hidden' : 'block mb-8'}`}>
                     <h1 className="text-sm font-bold text-center mb-2">ใบส่งซ่อม (แนบสินค้า)</h1>
                     <div className="flex justify-end mb-2 text-[10px]">
                       <div className="text-black font-bold">เลขที่ <span className="border-b border-dotted border-black inline-block w-16 text-center">{customerData?.jobId || ''}</span></div>
