@@ -515,72 +515,72 @@ export default function Dashboard() {
                 {/* ส่วนที่จะถูกพรินต์ออกมา */}
                 <div className="text-black">
                   {/* คูปองลูกค้า */}
-                  <div className={`border-2 border-dashed border-gray-400 p-6 rounded w-80 mx-auto ${printMode && printMode !== 'coupon' ? 'hidden print:hidden' : 'block mb-8'}`}>
+                  <div className={`border-2 border-dashed border-gray-400 print:border-black p-4 rounded w-[53mm] mx-auto text-black print:font-bold ${printMode && printMode !== 'coupon' ? 'hidden print:hidden' : 'block mb-8'}`}>
                     <h1 className="text-xl font-bold text-center mb-2">ใบคูปองซ่อม (ลูกค้า)</h1>
                     <p className="text-center font-bold">{centerName}</p>
-                    <p className="text-center text-xs mb-4 border-b pb-4">ศูนย์ซ่อมสร้างเพื่อชุมชน (Fix IT Center)</p>
-                    <div className="grid grid-cols-1 gap-2 text-sm">
+                    <p className="text-center text-[10px] mb-4 border-b border-gray-400 print:border-black pb-4">ศูนย์ซ่อมสร้างเพื่อชุมชน (Fix IT Center)</p>
+                    <div className="flex flex-col gap-2 text-xs">
                       <div><span className="font-bold">รหัสคิวงาน:</span> {customerData?.jobId || 'กำลังออกรหัส...'}</div>
                       <div><span className="font-bold">ชื่อลูกค้า:</span> {customerData?.firstName} {customerData?.lastName}</div>
                       <div><span className="font-bold">วันที่ส่งซ่อม:</span> {new Date().toLocaleDateString('th-TH')}</div>
                       <div><span className="font-bold">สินค้าที่ซ่อม:</span> {productType} {productDetail}</div>
                     </div>
-                    <div className="mt-4 pt-4 border-t text-center text-xs text-gray-600">
+                    <div className="mt-4 pt-4 border-t border-gray-400 print:border-black text-center text-[10px] text-black">
                       <p>กรุณานำคูปองนี้มาด้วยเมื่อมารับเครื่อง</p>
-                      <p className="mt-1 font-bold">ติดต่อสอบถาม: {contactPhone}</p>
+                      <p className="mt-1 font-bold text-xs">ติดต่อสอบถาม: {contactPhone}</p>
                     </div>
                   </div>
 
                   {/* ใบแนบสินค้า */}
-                  <div className={`border-2 border-dashed border-gray-400 p-4 rounded mx-auto text-black font-sans w-80 ${printMode && printMode !== 'attach' ? 'hidden print:hidden' : 'block mb-8'}`}>
-                    <h1 className="text-lg font-bold text-center mb-2">ใบส่งซ่อม (แนบสินค้า)</h1>
-                    <div className="flex justify-end mb-2 text-xs">
-                      <div className="text-blue-700 font-bold">เลขที่ <span className="border-b border-dotted border-blue-700 inline-block w-20 text-center">{customerData?.jobId || ''}</span></div>
+                  <div className={`border-2 border-dashed border-gray-400 print:border-black print:font-bold p-3 rounded mx-auto text-black font-sans w-[53mm] ${printMode && printMode !== 'attach' ? 'hidden print:hidden' : 'block mb-8'}`}>
+                    <h1 className="text-sm font-bold text-center mb-2">ใบส่งซ่อม (แนบสินค้า)</h1>
+                    <div className="flex justify-end mb-2 text-[10px]">
+                      <div className="text-black font-bold">เลขที่ <span className="border-b border-dotted border-black inline-block w-16 text-center">{customerData?.jobId || ''}</span></div>
                     </div>
-                    <div className="flex mb-1 text-xs">
-                      <span className="font-bold whitespace-nowrap">ชื่อ - สกุล</span>
-                      <span className="flex-1 border-b border-dotted border-black ml-2 pl-1 truncate">{customerData?.firstName} {customerData?.lastName}</span>
+                    <div className="flex mb-1 text-[10px]">
+                      <span className="font-bold whitespace-nowrap">ชื่อ-สกุล</span>
+                      <span className="flex-1 border-b border-dotted border-black ml-1 pl-1 truncate">{customerData?.firstName} {customerData?.lastName}</span>
                     </div>
-                    <div className="flex mb-1 text-xs">
+                    <div className="flex mb-1 text-[10px]">
                       <span className="font-bold whitespace-nowrap">โทรศัพท์</span>
-                      <span className="flex-1 border-b border-dotted border-black ml-2 pl-1 truncate">{phone || ''}</span>
+                      <span className="flex-1 border-b border-dotted border-black ml-1 pl-1 truncate">{phone || ''}</span>
                     </div>
-                    <div className="flex mb-4 text-xs">
+                    <div className="flex mb-3 text-[10px]">
                       <span className="font-bold whitespace-nowrap">อาการเสีย</span>
-                      <span className="flex-1 border-b border-dotted border-black ml-2 pl-1 truncate">{symptoms}</span>
+                      <span className="flex-1 border-b border-dotted border-black ml-1 pl-1 truncate">{symptoms}</span>
                     </div>
                     
-                    <table className="w-full border-collapse border border-black mb-4 text-xs">
+                    <table className="w-full border-collapse border border-black mb-3 text-[10px]">
                       <thead>
                         <tr>
-                          <th className="border border-black p-1 font-normal">รายการซ่อม</th>
-                          <th className="border border-black p-1 font-normal w-16">ค่าอะไหล่</th>
+                          <th className="border border-black p-1 font-bold">รายการซ่อม</th>
+                          <th className="border border-black p-1 font-bold w-12">ค่าอะไหล่</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr><td className="border border-black h-6"></td><td className="border border-black"></td></tr>
-                        <tr><td className="border border-black h-6"></td><td className="border border-black"></td></tr>
-                        <tr><td className="border border-black h-6"></td><td className="border border-black"></td></tr>
+                        <tr><td className="border border-black h-5"></td><td className="border border-black"></td></tr>
+                        <tr><td className="border border-black h-5"></td><td className="border border-black"></td></tr>
+                        <tr><td className="border border-black h-5"></td><td className="border border-black"></td></tr>
                         <tr>
-                          <td className="border border-black p-1 text-center font-normal">รวมเงิน</td>
+                          <td className="border border-black p-1 text-center font-bold">รวมเงิน</td>
                           <td className="border border-black p-1 text-center"></td>
                         </tr>
                       </tbody>
                     </table>
 
-                    <div className="flex justify-between mb-4 mt-2 text-xs px-2">
+                    <div className="flex justify-between mb-3 mt-2 text-[10px] px-1">
                       <label className="flex items-center gap-1">
-                        <input type="checkbox" className="w-4 h-4 print:appearance-none print:w-4 print:h-4 print:border print:border-black" /> ซ่อมคุ้มค่า
+                        <input type="checkbox" className="w-3 h-3 print:appearance-none print:w-3 print:h-3 print:border print:border-black print:bg-white" /> ซ่อมคุ้มค่า
                       </label>
                       <label className="flex items-center gap-1">
-                        <input type="checkbox" className="w-4 h-4 print:appearance-none print:w-4 print:h-4 print:border print:border-black" /> ซ่อมไม่คุ้มค่า
+                        <input type="checkbox" className="w-3 h-3 print:appearance-none print:w-3 print:h-3 print:border print:border-black print:bg-white" /> ไม่คุ้มค่า
                       </label>
                     </div>
 
-                    <div className="flex justify-center mt-4 text-xs">
+                    <div className="flex justify-center mt-3 text-[10px]">
                       <span className="mr-1">ลงชื่อ</span>
-                      <span className="border-b border-dotted border-black inline-block w-24 mx-1"></span>
-                      <span>ช่างผู้ประเมิน</span>
+                      <span className="border-b border-dotted border-black inline-block w-16 mx-1"></span>
+                      <span>ผู้ประเมิน</span>
                     </div>
                   </div>
 
