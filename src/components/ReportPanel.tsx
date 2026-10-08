@@ -52,6 +52,7 @@ export default function ReportPanel() {
   const displayedJobs = filteredJobsByDate.filter(job => {
     if (filterStatus === 'ALL') return true;
     if (filterStatus === 'PENDING_REPAIRING') return job.status === 'PENDING' || job.status === 'REPAIRING';
+    if (filterStatus === 'WAITING_RETURN') return job.status === 'WAITING_RETURN' || job.status === 'FIXED' || job.status === 'UNREPAIRABLE';
     return job.status === filterStatus;
   });
 
@@ -82,6 +83,8 @@ export default function ReportPanel() {
       case 'PENDING': return 'รอซ่อม';
       case 'REPAIRING': return 'กำลังซ่อม';
       case 'WAITING_RETURN': return 'รอส่งคืน';
+      case 'FIXED': return 'ซ่อมได้ (รอส่งคืน)';
+      case 'UNREPAIRABLE': return 'ซ่อมไม่ได้ (รอส่งคืน)';
       case 'RETURNED': return 'ส่งคืนแล้ว';
       default: return status;
     }
@@ -90,8 +93,10 @@ export default function ReportPanel() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'REPAIRING': return 'bg-blue-100 text-blue-800';
+      case 'REPAIRING': return 'bg-yellow-100 text-yellow-800';
       case 'WAITING_RETURN': return 'bg-orange-100 text-orange-800';
+      case 'FIXED': return 'bg-blue-100 text-blue-800';
+      case 'UNREPAIRABLE': return 'bg-red-100 text-red-800';
       case 'RETURNED': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -150,8 +155,8 @@ export default function ReportPanel() {
           onClick={() => setFilterStatus('WAITING_RETURN')}
           className={`p-4 rounded shadow-sm cursor-pointer transition-all duration-200 ${filterStatus === 'WAITING_RETURN' ? 'bg-orange-100 border-l-4 border-orange-600 ring-2 ring-orange-300' : 'bg-orange-50 border-l-4 border-orange-400 hover:bg-orange-100 opacity-80'}`}
         >
-          <div className="text-sm text-orange-800 font-bold">ซ่อมเสร็จ (รอส่งคืน)</div>
-          <div className="text-3xl font-black text-orange-700">{statusCount['WAITING_RETURN'] || 0}</div>
+          <div className="text-sm text-orange-800 font-bold">ซ่อมเสร็จ / รอส่งคืน</div>
+          <div className="text-3xl font-black text-orange-700">{(statusCount['WAITING_RETURN'] || 0) + (statusCount['FIXED'] || 0) + (statusCount['UNREPAIRABLE'] || 0)}</div>
         </div>
         
         <div 

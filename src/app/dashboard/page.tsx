@@ -169,18 +169,17 @@ export default function Dashboard() {
     setIsFetchingJobs(false);
   };
 
-  const returnItem = async (jobId: string) => {
-    if (!confirm('ยืนยันการส่งคืนสิ่งของรายการนี้?')) return;
+  const updateJobStatus = async (jobId: string, status: string, confirmMsg: string) => {
+    if (!confirm(confirmMsg)) return;
     try {
       const res = await fetch('/api/jobs', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId, status: 'RETURNED' })
+        body: JSON.stringify({ jobId, status })
       });
       const data = await res.json();
       if (data.success) {
-        // อัปเดต state ทันที
-        setCustomerJobs(jobs => jobs.map(j => j.jobId === jobId ? { ...j, status: 'RETURNED' } : j));
+        setCustomerJobs(jobs => jobs.map(j => j.jobId === jobId ? { ...j, status } : j));
       } else {
         alert('เกิดข้อผิดพลาด: ' + data.message);
       }
@@ -465,20 +464,22 @@ export default function Dashboard() {
                             <td className="px-6 py-4 whitespace-nowrap font-medium">{job.jobId}</td>
                             <td className="px-6 py-4">{job.category?.name} {job.itemDetail}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              {job.status === 'RETURNED' ? (
-                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">รับคืนแล้ว</span>
-                              ) : (
-                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">กำลังซ่อม/รอมารับ</span>
-                              )}
+                              {job.status === 'RETURNED' && <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">ส่งมอบคืนแล้ว</span>}
+                              {job.status === 'FIXED' && <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">ซ่อมได้ (รอส่งคืน)</span>}
+                              {job.status === 'UNREPAIRABLE' && <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">ซ่อมไม่ได้ (รอส่งคืน)</span>}
+                              {(job.status === 'PENDING' || job.status === 'REPAIRING' || job.status === 'WAITING_RETURN') && <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">กำลังซ่อม/รอมารับ</span>}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <td className="px-6 py-4 whitespace-nowrap text-center space-x-2">
                               {job.status !== 'RETURNED' && (
-                                <button 
-                                  onClick={() => returnItem(job.jobId)}
-                                  className="text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm font-medium"
-                                >
-                                  ส่งมอบคืนลูกค้า
-                                </button>
+                                <>
+                                  {job.status !== 'FIXED' && job.status !== 'UNREPAIRABLE' && (
+                                    <>
+                                      <button onClick={() => updateJobStatus(job.jobId, 'FIXED', 'ยืนยันว่าซ่อมเสร็จแล้ว (ซ่อมได้)?')} className="text-white bg-blue-500 hover:bg-blue-600 px-2 py-1 rounded text-xs font-medium">ซ่อมได้</button>
+                                      <button onClick={() => updateJobStatus(job.jobId, 'UNREPAIRABLE', 'ยืนยันว่าไม่สามารถซ่อมได้ (ซ่อมไม่ได้)?')} className="text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded text-xs font-medium">ซ่อมไม่ได้</button>
+                                    </>
+                                  )}
+                                  <button onClick={() => updateJobStatus(job.jobId, 'RETURNED', 'ยืนยันการส่งมอบคืนสิ่งของให้ลูกค้า?')} className="text-white bg-green-600 hover:bg-green-700 px-2 py-1 rounded text-xs font-medium">ส่งมอบคืน</button>
+                                </>
                               )}
                             </td>
                           </tr>
