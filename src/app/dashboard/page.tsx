@@ -198,6 +198,22 @@ export default function Dashboard() {
     }
   };
 
+  const deleteCategory = async (categoryId: string) => {
+    if (!confirm('ยืนยันการลบชนิดสิ่งของนี้?')) return;
+    try {
+      const res = await fetch(`/api/categories?id=${categoryId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setCategories(prev => prev.filter(c => c.id !== categoryId));
+        setProductType('');
+      } else {
+        alert('ไม่สามารถลบได้ อาจมีรายการซ่อมที่เชื่อมโยงอยู่');
+      }
+    } catch (error) {
+      alert('เกิดข้อผิดพลาดในการลบชนิดสิ่งของ');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-blue-600 text-white shadow-md print:hidden">
@@ -412,14 +428,25 @@ export default function Dashboard() {
                 <div className="bg-gray-50 p-6 rounded border space-y-4">
                   <div>
                     <label className="block font-medium text-gray-700 mb-1">ชนิดสิ่งของ (เลือกจากรายการ หรือพิมพ์เอง)</label>
-                    <input 
-                      type="text" 
-                      list="popular-items"
-                      className="w-full border-gray-300 rounded p-2 text-black border" 
-                      placeholder="เช่น พัดลม, เตารีด" 
-                      value={productType} 
-                      onChange={(e) => setProductType(e.target.value)} 
-                    />
+                    <div className="flex gap-2 items-center">
+                      <input 
+                        type="text" 
+                        list="popular-items"
+                        className="w-full border-gray-300 rounded p-2 text-black border flex-grow" 
+                        placeholder="เช่น พัดลม, เตารีด" 
+                        value={productType} 
+                        onChange={(e) => setProductType(e.target.value)} 
+                      />
+                      {categories.find(c => c.name === productType.trim() && !['พัดลม', 'เตารีด', 'หม้อหุงข้าว', 'กาต้มน้ำร้อน', 'ไดร์เป่าผม', 'เครื่องปั่นน้ำผลไม้', 'ไมโครเวฟ', 'โทรทัศน์ / ทีวี', 'วิทยุ / ลำโพง', 'คอมพิวเตอร์ / โน้ตบุ๊ก', 'ปลั๊กพ่วง / สายไฟ', 'โคมไฟ / หลอดไฟ'].includes(c.name)) && (
+                        <button 
+                          onClick={() => deleteCategory(categories.find(c => c.name === productType.trim())!.id)}
+                          className="bg-red-100 hover:bg-red-200 text-red-600 px-3 py-2 rounded font-medium whitespace-nowrap"
+                          title="ลบชนิดสิ่งของนี้ออกจากระบบ"
+                        >
+                          ลบ
+                        </button>
+                      )}
+                    </div>
                     <datalist id="popular-items">
                       <option value="พัดลม" />
                       <option value="เตารีด" />
