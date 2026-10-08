@@ -517,13 +517,54 @@ export default function Dashboard() {
                   </div>
 
                   {/* ใบแนบสินค้า */}
-                  <div className={`border-2 border-dashed border-gray-400 p-6 rounded w-80 mx-auto ${printMode && printMode !== 'attach' ? 'hidden print:hidden' : 'block mb-8'}`}>
-                    <h1 className="text-xl font-bold text-center mb-2">ใบส่งซ่อม (แนบสิ่งของ)</h1>
-                    <div className="grid grid-cols-1 gap-2 text-sm">
-                      <div><span className="font-bold">รหัสซ่อม:</span> {customerData?.jobId || 'กำลังออกรหัส...'}</div>
-                      <div><span className="font-bold">สินค้าที่ซ่อม:</span> {productType} {productDetail}</div>
-                      <div><span className="font-bold">อาการเสีย:</span> {symptoms}</div>
-                      <div><span className="font-bold">ชื่อลูกค้า:</span> {customerData?.firstName} {customerData?.lastName}</div>
+                  <div className={`border-2 border-dashed border-gray-400 p-6 rounded mx-auto text-black font-sans w-[450px] ${printMode && printMode !== 'attach' ? 'hidden print:hidden' : 'block mb-8'}`}>
+                    <div className="flex justify-end mb-4">
+                      <div className="text-blue-700 font-bold">เลขที่ <span className="border-b border-dotted border-blue-700 inline-block w-32 text-center">{customerData?.jobId || ''}</span></div>
+                    </div>
+                    <div className="mb-2">
+                      <span className="font-bold">ชื่อ - สกุล</span>
+                      <span className="border-b border-dotted border-black inline-block w-64 ml-2 pl-2">{customerData?.firstName} {customerData?.lastName}</span>
+                    </div>
+                    <div className="mb-2">
+                      <span className="font-bold">โทรศัพท์</span>
+                      <span className="border-b border-dotted border-black inline-block w-64 ml-2 pl-2">{phone || ''}</span>
+                    </div>
+                    <div className="mb-4">
+                      <span className="font-bold">อาการเสีย</span>
+                      <span className="border-b border-dotted border-black inline-block w-64 ml-2 pl-2 truncate">{symptoms}</span>
+                    </div>
+                    
+                    <table className="w-full border-collapse border border-black mb-4">
+                      <thead>
+                        <tr>
+                          <th className="border border-black p-2 font-normal">รายการซ่อม</th>
+                          <th className="border border-black p-2 font-normal w-24">ค่าอะไหล่</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr><td className="border border-black h-8"></td><td className="border border-black"></td></tr>
+                        <tr><td className="border border-black h-8"></td><td className="border border-black"></td></tr>
+                        <tr><td className="border border-black h-8"></td><td className="border border-black"></td></tr>
+                        <tr>
+                          <td className="border border-black p-2 text-center font-normal">รวมเงิน</td>
+                          <td className="border border-black p-2 text-center"></td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                    <div className="flex justify-around mb-6 mt-4">
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" className="w-5 h-5 print:appearance-none print:w-5 print:h-5 print:border-2 print:border-black" /> ซ่อมคุ้มค่า
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" className="w-5 h-5 print:appearance-none print:w-5 print:h-5 print:border-2 print:border-black" /> ซ่อมไม่คุ้มค่า
+                      </label>
+                    </div>
+
+                    <div className="flex justify-center mt-6">
+                      <span className="mr-2">ลงชื่อ</span>
+                      <span className="border-b border-dotted border-black inline-block w-48 mx-2"></span>
+                      <span>ช่างผู้ประเมิน</span>
                     </div>
                   </div>
 
