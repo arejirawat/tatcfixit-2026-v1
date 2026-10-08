@@ -128,14 +128,15 @@ export default function Dashboard() {
     }
   };
 
-  const fetchCustomerJobs = async () => {
+  const fetchCustomerJobs = async (fetchAll: boolean = false) => {
     setIsFetchingJobs(true);
     try {
-      const res = await fetch(`/api/jobs?citizenId=${customerData.citizenId}`);
+      const url = fetchAll ? '/api/jobs' : `/api/jobs?citizenId=${customerData?.citizenId}`;
+      const res = await fetch(url);
       const data = await res.json();
       if (data.success) {
         setCustomerJobs(data.jobs);
-        if (data.customer) {
+        if (data.customer && !fetchAll) {
           setCustomerData((prev: any) => ({
             ...prev,
             phone: prev?.phone || data.customer.phone || '-',
@@ -279,9 +280,21 @@ export default function Dashboard() {
                         />
                         <button 
                           onClick={searchJobByCoupon}
-                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-bold"
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-bold whitespace-nowrap"
                         >
                           ค้นหา
+                        </button>
+                      </div>
+                      <div className="mt-4">
+                        <button 
+                          onClick={() => {
+                            setServiceType('return');
+                            setStep(3);
+                            fetchCustomerJobs(true);
+                          }}
+                          className="w-full bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold py-2 px-4 rounded border border-blue-300 transition-colors"
+                        >
+                          ดูรายการส่งมอบคืนทั้งหมด
                         </button>
                       </div>
                     </div>
@@ -451,13 +464,15 @@ export default function Dashboard() {
 
             {step === 3 && serviceType === 'return' && (
               <div>
-                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded shadow-sm text-black">
-                  <h3 className="font-bold text-lg text-blue-800">ข้อมูลผู้ใช้บริการ</h3>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    <div><span className="font-semibold">ชื่อ-สกุล:</span> {customerData?.name || `${customerData?.firstName || ''} ${customerData?.lastName || ''}`}</div>
-                    <div><span className="font-semibold">เบอร์โทรศัพท์:</span> {customerData?.phone || '-'}</div>
+                {customerData && (customerData.name || customerData.firstName) && (
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded shadow-sm text-black">
+                    <h3 className="font-bold text-lg text-blue-800">ข้อมูลผู้ใช้บริการ</h3>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div><span className="font-semibold">ชื่อ-สกุล:</span> {customerData.name || `${customerData.firstName || ''} ${customerData.lastName || ''}`}</div>
+                      <div><span className="font-semibold">เบอร์โทรศัพท์:</span> {customerData.phone || '-'}</div>
+                    </div>
                   </div>
-                </div>
+                )}
                 
                 <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
                   <h2 className="text-xl font-bold text-gray-800">รายการสิ่งของที่นำมาส่งซ่อม</h2>
@@ -492,6 +507,7 @@ export default function Dashboard() {
                       <thead className="bg-gray-50">
                         <tr>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รหัสคิวงาน</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลูกค้า</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สิ่งของ</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
                           <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">การจัดการ</th>
@@ -509,12 +525,14 @@ export default function Dashboard() {
                             const matchId = job.jobId.toLowerCase().includes(searchLower);
                             const matchCat = (job.category?.name || '').toLowerCase().includes(searchLower);
                             const matchDetail = (job.itemDetail || '').toLowerCase().includes(searchLower);
-                            if (!matchId && !matchCat && !matchDetail) return false;
+                            const matchCustomer = (job.customer?.name || '').toLowerCase().includes(searchLower);
+                            if (!matchId && !matchCat && !matchDetail && !matchCustomer) return false;
                           }
                           return true;
                         }).map((job) => (
                           <tr key={job.jobId} className={job.status === 'RETURNED' ? 'bg-green-50' : ''}>
                             <td className="px-6 py-4 whitespace-nowrap font-medium">{job.jobId}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">{job.customer?.name || '-'}</td>
                             <td className="px-6 py-4">{job.category?.name} {job.itemDetail}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               {job.status === 'RETURNED' && <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">ส่งมอบคืนแล้ว</span>}
