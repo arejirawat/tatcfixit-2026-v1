@@ -12,10 +12,6 @@ export default function ReportPanel() {
   // Popup state
   const [selectedJob, setSelectedJob] = useState<any>(null);
 
-  useEffect(() => {
-    fetchJobs();
-  }, []);
-
   const fetchJobs = async () => {
     try {
       const res = await fetch('/api/jobs');
@@ -29,6 +25,10 @@ export default function ReportPanel() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
 
   if (loading) {
     return <div className="p-8 text-center">กำลังโหลดข้อมูล...</div>;

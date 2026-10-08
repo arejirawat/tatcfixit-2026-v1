@@ -18,13 +18,6 @@ export default function AdminPanel() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lanIp, setLanIp] = useState('');
 
-  useEffect(() => {
-    fetchJobs();
-    fetchSettings();
-    fetchSyncStats();
-    fetch('/api/admin/ip').then(res => res.json()).then(data => setLanIp(data.ip)).catch(() => setLanIp('localhost'));
-  }, []);
-
   const fetchSyncStats = async () => {
     try {
       const res = await fetch('/api/admin/sync');
@@ -36,6 +29,14 @@ export default function AdminPanel() {
       console.error(e);
     }
   };
+
+  useEffect(() => {
+    fetchJobs();
+    fetchSettings();
+    fetchSyncStats();
+    fetch('/api/admin/ip').then(res => res.json()).then(data => setLanIp(data.ip)).catch(() => setLanIp('localhost'));
+  }, []);
+
 
   const handleSyncToCloud = async () => {
     setIsSyncing(true);
