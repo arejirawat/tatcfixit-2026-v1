@@ -17,18 +17,34 @@ IF %ERRORLEVEL% NEQ 0 (
 )
 
 :: 2. Check Python
+set PYTHON_CMD=
 python --version >nul 2>&1
-IF %ERRORLEVEL% NEQ 0 (
-    echo ERROR: Python is not installed on this machine.
-    echo Please download and install Python from https://www.python.org/
-    echo IMPORTANT: Make sure to check "Add Python to PATH" during installation.
+IF %ERRORLEVEL% EQU 0 (
+    set PYTHON_CMD=python
+) ELSE (
+    py --version >nul 2>&1
+    IF %ERRORLEVEL% EQU 0 (
+        set PYTHON_CMD=py
+    )
+)
+
+IF "%PYTHON_CMD%"=="" (
+    echo INFO: Python is not found or not in PATH.
+    echo INFO: Attempting to install Python automatically in the background...
+    winget install --id Python.Python.3.11 -e --silent --accept-package-agreements --accept-source-agreements
+    
+    echo ===================================================================
+    echo  SUCCESS: Python has been installed automatically!
+    echo  IMPORTANT: You MUST CLOSE THIS WINDOW and open Start_FixIT.bat again
+    echo  for the new settings to take effect.
+    echo ===================================================================
     pause
     exit /b
 )
 
 :: 3. Install Python Dependencies
 echo INFO: Checking Smartcard Reader dependencies...
-call python -m pip install pyscard flask flask-cors >nul 2>&1
+call %PYTHON_CMD% -m pip install pyscard flask flask-cors >nul 2>&1
 
 :: 4. Install Node.js Dependencies
 IF NOT EXIST "node_modules\" (
@@ -44,7 +60,7 @@ IF NOT EXIST "prisma\dev.db" (
 
 :: 5. Start Python Agent
 echo INFO: Starting Smartcard Reader service (Port 8081)...
-start "Smartcard Agent" cmd /k "python agent.py"
+start "Smartcard Agent" cmd /k "%PYTHON_CMD% agent.py"
 
 :: 6. Start Web Server
 echo INFO: Starting Web Server (Port 3000)...
