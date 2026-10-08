@@ -207,7 +207,7 @@ export default function Dashboard() {
         setCategories(prev => prev.filter(c => c.id !== categoryId));
         setProductType('');
       } else {
-        alert('ไม่สามารถลบได้ อาจมีรายการซ่อมที่เชื่อมโยงอยู่');
+        alert('ไม่สามารถลบได้: ' + (data.message || 'เกิดข้อผิดพลาด'));
       }
     } catch (error) {
       alert('เกิดข้อผิดพลาดในการลบชนิดสิ่งของ');
