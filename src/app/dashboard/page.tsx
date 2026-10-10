@@ -24,9 +24,33 @@ export default function Dashboard() {
   const [printMode, setPrintMode] = useState<'coupon' | 'attach' | 'full' | null>(null);
   const [customerJobs, setCustomerJobs] = useState<any[]>([]);
   const [isFetchingJobs, setIsFetchingJobs] = useState(false);
-  const [searchJobId, setSearchJobId] = useState('');
+  const [searchPrefix, setSearchPrefix] = useState('FIX-');
+  const [searchJobIdPart, setSearchJobIdPart] = useState('');
+  const [initialJobCount, setInitialJobCount] = useState<number | null>(null);
+  const [hasNewJobs, setHasNewJobs] = useState(false);
   const [returnFilterStatus, setReturnFilterStatus] = useState('ALL');
   const [returnSearchText, setReturnSearchText] = useState('');
+
+  useEffect(() => {
+    fetch('/api/jobs/count').then(r => r.json()).then(d => {
+      if (d.success) setInitialJobCount(d.count);
+    }).catch(() => {});
+
+    const interval = setInterval(() => {
+      fetch('/api/jobs/count').then(r => r.json()).then(d => {
+        if (d.success) {
+          setInitialJobCount(prev => {
+            if (prev !== null && d.count > prev) {
+              setHasNewJobs(true);
+            }
+            return prev;
+          });
+        }
+      }).catch(() => {});
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -37,6 +61,7 @@ export default function Dashboard() {
           data.settings.forEach((s: any) => {
             if (s.key === 'CENTER_NAME') setCenterName(s.value);
             if (s.key === 'CONTACT_PHONE') setContactPhone(s.value);
+            if (s.key === 'QUEUE_PREFIX') setSearchPrefix(s.value);
           });
         }
 
@@ -152,10 +177,11 @@ export default function Dashboard() {
   };
 
   const searchJobByCoupon = async () => {
-    if (!searchJobId) return;
+    const fullJobId = `${searchPrefix}${searchJobIdPart}`.trim();
+    if (!searchJobIdPart) return;
     setIsFetchingJobs(true);
     try {
-      const res = await fetch(`/api/jobs/search?jobId=${searchJobId}`);
+      const res = await fetch(`/api/jobs/search?jobId=${fullJobId}`);
       const data = await res.json();
       if (data.success) {
         // แตกชื่อ นามสกุล จาก data.job.customer.name
@@ -216,7 +242,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">\n      {hasNewJobs && (\n        <div className="bg-green-500 text-white p-3 text-center cursor-pointer shadow-md flex justify-center items-center gap-4 animate-pulse" onClick={() => window.location.reload()}>\n          <span>🔔 มีรายการแจ้งซ่อมใหม่เข้ามา! กรุณารีเฟรชหน้าเว็บเพื่อดูข้อมูลล่าสุด</span>\n          <button className="bg-white text-green-700 px-3 py-1 rounded font-bold text-sm">รีเฟรช (F5)</button>\n        </div>\n      )}
       <nav className="bg-[#660000] text-white shadow-md print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
@@ -294,13 +320,7 @@ export default function Dashboard() {
                     <div className="mt-12 border-t pt-8 max-w-md mx-auto">
                       <h3 className="text-md font-medium text-gray-700 mb-4">หรือ ค้นหาจากคูปอง (มารับของคืน)</h3>
                       <div className="flex gap-2">
-                        <input 
-                          type="text" 
-                          placeholder="กรอกรหัสคิวงาน เช่น FIX-0001" 
-                          className="border p-2 rounded flex-grow text-black"
-                          value={searchJobId}
-                          onChange={e => setSearchJobId(e.target.value)}
-                        />
+                        <input type="text" className="border p-2 rounded w-20 text-black text-center font-bold bg-gray-100" value={searchPrefix} onChange={e => setSearchPrefix(e.target.value)} disabled /><input type="text" placeholder="เช่น 0001" className="border p-2 rounded flex-grow text-black" value={searchJobIdPart} onChange={e => setSearchJobIdPart(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') searchJobByCoupon(); }} />
                         <button 
                           onClick={searchJobByCoupon}
                           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-bold whitespace-nowrap"

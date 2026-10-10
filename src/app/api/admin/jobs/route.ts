@@ -15,3 +15,22 @@ export async function GET() {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
+
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ success: false, message: 'Missing id' }, { status: 400 });
+    }
+    
+    await prisma.job.delete({
+      where: { id }
+    });
+    
+    return NextResponse.json({ success: true, message: 'Deleted successfully' });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  }
+}

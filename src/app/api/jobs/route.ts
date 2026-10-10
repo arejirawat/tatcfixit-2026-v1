@@ -52,6 +52,14 @@ export async function POST(request: Request) {
       category = await prisma.category.create({ data: { name: categoryName } });
     }
 
+    
+    // 3.5 Check override date
+    const overrideDateSetting = await prisma.setting.findUnique({ where: { key: 'OVERRIDE_DATE' } });
+    let overrideDate = undefined;
+    if (overrideDateSetting && overrideDateSetting.value) {
+      overrideDate = new Date(overrideDateSetting.value);
+    }
+
     // 4. สร้างใบรับงาน
     const job = await prisma.job.create({
       data: {
@@ -60,9 +68,11 @@ export async function POST(request: Request) {
         categoryId: category.id,
         itemDetail: data.productDetail,
         symptoms: data.symptoms,
-        status: 'PENDING'
+        status: 'PENDING',
+        ...(overrideDate && { createdAt: overrideDate })
       }
     });
+
 
     return NextResponse.json({ success: true, job });
   } catch (error: any) {

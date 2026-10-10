@@ -10,6 +10,8 @@ export default function AdminPanel() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [prefix, setPrefix] = useState('FIX-');
   const [queueNumber, setQueueNumber] = useState('1');
+  const [overrideDate, setOverrideDate] = useState('');
+  const [isOverrideDate, setIsOverrideDate] = useState(false);
   const [centerName, setCenterName] = useState('วิทยาลัยเทคนิคสัตหีบ');
   const [contactPhone, setContactPhone] = useState('');
   const [activeMenu, setActiveMenu] = useState('overview');
@@ -70,6 +72,15 @@ export default function AdminPanel() {
         if (s.key === 'QUEUE_NUMBER') setQueueNumber(s.value);
         if (s.key === 'CENTER_NAME') setCenterName(s.value);
         if (s.key === 'CONTACT_PHONE') setContactPhone(s.value);
+          if (s.key === 'OVERRIDE_DATE') {
+            if (s.value) {
+              setOverrideDate(s.value);
+              setIsOverrideDate(true);
+            } else {
+              setIsOverrideDate(false);
+              setOverrideDate('');
+            }
+          }
       });
     }
   };
@@ -81,6 +92,22 @@ export default function AdminPanel() {
       body: JSON.stringify({ key, value })
     });
     alert('บันทึกการตั้งค่าแล้ว');
+  };
+
+  const deleteJob = async (id: string) => {
+    if (confirm('คุณแน่ใจหรือไม่ที่จะยกเลิกและลบรายการแจ้งซ่อมนี้? ข้อมูลนี้จะไม่สามารถกู้คืนได้')) {
+      try {
+        const res = await fetch('/api/admin/jobs?id=' + id, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          fetchJobs();
+        } else {
+          alert('เกิดข้อผิดพลาด: ' + data.message);
+        }
+      } catch (err) {
+        alert('ไม่สามารถลบรายการได้');
+      }
+    }
   };
 
   const clearDatabase = async () => {
@@ -252,6 +279,7 @@ export default function AdminPanel() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">เบอร์โทร</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">สิ่งของที่ซ่อม</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">สถานะ</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -270,7 +298,7 @@ export default function AdminPanel() {
                 ))}
                 {jobs.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center py-8 text-gray-500">ไม่มีข้อมูล</td>
+                    <td colSpan={6} className="text-center py-8 text-gray-500">ไม่มีข้อมูล</td>
                   </tr>
                 )}
               </tbody>
@@ -321,7 +349,37 @@ export default function AdminPanel() {
             <p className="text-2xl text-blue-600 font-mono mt-2">{prefix}{queueNumber.padStart(4, '0')}</p>
           </div>
 
+          
+          <h2 className="text-xl font-semibold mb-6 mt-10 border-b pb-2">ตั้งค่าวันที่บันทึกข้อมูล (กรณีกรอกย้อนหลัง)</h2>
+          <div className="mb-4">
+            <div className="flex items-center gap-4 mb-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="dateMode" checked={!isOverrideDate} onChange={() => {
+                  setIsOverrideDate(false);
+                  setOverrideDate('');
+                  saveSetting('OVERRIDE_DATE', '');
+                }} className="w-4 h-4 text-blue-600" />
+                <span>ใช้วัน/เวลาปัจจุบันจากเครื่อง</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="dateMode" checked={isOverrideDate} onChange={() => {
+                  setIsOverrideDate(true);
+                  const today = new Date().toISOString().split('T')[0];
+                  setOverrideDate(today);
+                }} className="w-4 h-4 text-blue-600" />
+                <span>ปรับวันที่เอง (ย้อนหลัง)</span>
+              </label>
+            </div>
+            {isOverrideDate && (
+              <div className="flex gap-2 mt-3 p-4 bg-gray-50 border rounded-md">
+                <input type="date" value={overrideDate} onChange={e => setOverrideDate(e.target.value)} className="border p-2 rounded w-full" />
+                <button onClick={() => saveSetting('OVERRIDE_DATE', overrideDate)} className="bg-blue-600 text-white px-4 rounded hover:bg-blue-700 whitespace-nowrap font-medium">บันทึกวันที่</button>
+              </div>
+            )}
+          </div>
+
           <h2 className="text-xl font-semibold mb-6 mt-10 border-b pb-2">ระบบสแกนสำหรับช่าง (QR Code)</h2>
+
           <div className="p-6 bg-white border rounded-lg flex flex-col items-center">
             <p className="text-sm text-gray-600 mb-4 text-center">
               ให้ช่างซ่อมใช้โทรศัพท์มือถือสแกน QR Code นี้ (ต้องต่อ WiFi เดียวกัน)<br/>
