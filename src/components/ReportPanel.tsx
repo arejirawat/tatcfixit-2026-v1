@@ -27,7 +27,7 @@ export default function ReportPanel() {
         const center = data.settings.find((s: any) => s.key === 'CENTER_NAME');
         if (center) setCenterName(center.value);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
     }
   };
