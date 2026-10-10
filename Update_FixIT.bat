@@ -7,16 +7,33 @@ echo     Fix IT Center - Auto Update System
 echo =======================================================
 echo.
 
-echo [1/3] Downloading latest updates from GitHub...
-git pull origin main
+echo [1/4] Backing up database to prevent data loss...
+if exist "prisma\dev.db" (
+    copy /Y "prisma\dev.db" "dev_backup_safe.db" >nul 2>&1
+    echo Database backed up successfully.
+) else (
+    echo No existing database found, skipping backup.
+)
 echo.
 
-echo [2/3] Checking and installing new components...
+echo [2/4] Downloading latest updates from GitHub...
+git fetch --all
+git reset --hard origin/main
+echo.
+
+echo [3/4] Restoring database...
+if exist "dev_backup_safe.db" (
+    copy /Y "dev_backup_safe.db" "prisma\dev.db" >nul 2>&1
+    echo Database restored successfully.
+)
+echo.
+
+echo [4/4] Checking and installing new components...
 call npm install
 call npx prisma generate
 echo.
 
-echo [3/3] Synchronizing database structure...
+echo Synchronizing database structure...
 call npx prisma db push --accept-data-loss
 echo.
 
