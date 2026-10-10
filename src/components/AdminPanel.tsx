@@ -115,7 +115,7 @@ export default function AdminPanel() {
     if (confirm('คุณแน่ใจหรือไม่ที่จะยกเลิกการซ่อมนี้? (ข้อมูลจะยังอยู่แต่สถานะเป็นยกเลิก)')) {
       try {
         const res = await fetch('/api/jobs', {
-          method: 'POST',
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ jobId, status: 'CANCELLED' })
         });
