@@ -52,11 +52,9 @@ IF NOT EXIST ".env" (
     echo DATABASE_URL="file:./dev.db" > .env
 )
 
-IF NOT EXIST "node_modules\" (
-    echo INFO: First time setup. Downloading system files. Please wait 2-3 minutes...
-    call npm install
-    call npx prisma generate
-)
+echo INFO: Checking and updating system dependencies... (This may take a minute on first run)
+call npm install
+call npx prisma generate
 
 echo INFO: Synchronizing database schema...
 call npx prisma db push --accept-data-loss
