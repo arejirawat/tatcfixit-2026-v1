@@ -43,7 +43,7 @@ export default function AdminPanel() {
   const handleSyncToCloud = async () => {
     setIsSyncing(true);
     try {
-      const res = await fetch('/api/admin/sync', { method: 'PUT' });
+      const res = await fetch('/api/admin/sync', { method: 'POST' });
       const data = await res.json();
       if (data.success) {
         alert(data.message);
@@ -87,7 +87,7 @@ export default function AdminPanel() {
 
   const saveSetting = async (key: string, value: string) => {
     await fetch('/api/admin/settings', {
-      method: 'PUT',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key, value })
     });
@@ -115,7 +115,7 @@ export default function AdminPanel() {
     if (confirm('คุณแน่ใจหรือไม่ที่จะยกเลิกการซ่อมนี้? (ข้อมูลจะยังอยู่แต่สถานะเป็นยกเลิก)')) {
       try {
         const res = await fetch('/api/jobs', {
-          method: 'PUT',
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ jobId, status: 'CANCELLED' })
         });
@@ -162,7 +162,7 @@ export default function AdminPanel() {
 
     try {
       const res = await fetch('/api/admin/restore', {
-        method: 'PUT',
+        method: 'POST',
         body: formData
       });
       const data = await res.json();
