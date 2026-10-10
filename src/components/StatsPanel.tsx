@@ -93,17 +93,17 @@ export default function StatsPanel() {
         <div className="inline-flex bg-gray-100 p-1 rounded-lg">
           <button
             onClick={() => setFilterMode('today')}
-            className={\`px-6 py-2 rounded-md font-semibold transition-all \${
+            className={`px-6 py-2 rounded-md font-semibold transition-all ${
               filterMode === 'today' ? 'bg-blue-600 text-white shadow' : 'text-gray-600 hover:bg-gray-200'
-            }\`}
+            }`}
           >
             รายวัน (วันนี้)
           </button>
           <button
             onClick={() => setFilterMode('all')}
-            className={\`px-6 py-2 rounded-md font-semibold transition-all \${
+            className={`px-6 py-2 rounded-md font-semibold transition-all ${
               filterMode === 'all' ? 'bg-blue-600 text-white shadow' : 'text-gray-600 hover:bg-gray-200'
-            }\`}
+            }`}
           >
             ทั้งหมด (ตั้งแต่ต้น)
           </button>
@@ -148,7 +148,7 @@ export default function StatsPanel() {
                     <td className="p-4 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <div className="w-16 bg-gray-200 rounded-full h-2.5">
-                          <div className={\`h-2.5 rounded-full \${successRate >= 80 ? 'bg-green-500' : successRate >= 50 ? 'bg-yellow-400' : 'bg-red-500'}\`} style={{ width: \`\${successRate}%\` }}></div>
+                          <div className={`h-2.5 rounded-full ${successRate >= 80 ? 'bg-green-500' : successRate >= 50 ? 'bg-yellow-400' : 'bg-red-500'}`} style={{ width: `${successRate}%` }}></div>
                         </div>
                         <span className="font-bold text-gray-700 w-10">{successRate}%</span>
                       </div>
