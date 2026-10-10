@@ -116,7 +116,7 @@ export default function Dashboard() {
       const data = await res.json();
       if (data.success) {
         // อัปเดต customerData ให้มี jobId กลับมาเพื่อแสดงบนใบงาน
-        setCustomerData({ ...customerData, jobId: data.job.jobId });
+        setCustomerData({ ...customerData, jobId: data.job.jobId, createdAt: data.job.createdAt });
         
         if (productType && !categories.find(c => c.name === productType.trim())) {
           setCategories(prev => [...prev, { id: 'new-' + Date.now(), name: productType.trim() }]);
@@ -188,6 +188,7 @@ export default function Dashboard() {
     const nameParts = (job.customer?.name || '').split(' ');
     setCustomerData({
       jobId: job.jobId,
+        createdAt: job.createdAt,
       citizenId: job.customer?.citizenId || '-',
       firstName: nameParts[0] || '',
       lastName: nameParts.slice(1).join(' ') || '',
@@ -672,7 +673,7 @@ export default function Dashboard() {
                     <div className="flex flex-col gap-2 text-xs">
                       <div><span className="font-bold">รหัสคิวงาน:</span> {customerData?.jobId || 'กำลังออกรหัส...'}</div>
                       <div><span className="font-bold">ชื่อลูกค้า:</span> {customerData?.firstName} {customerData?.lastName}</div>
-                      <div><span className="font-bold">วันที่ส่งซ่อม:</span> {new Date().toLocaleDateString('th-TH')}</div>
+                      <div><span className="font-bold">วันที่ส่งซ่อม:</span> {(customerData?.createdAt ? new Date(customerData.createdAt) : new Date()).toLocaleDateString('th-TH')}</div>
                       <div><span className="font-bold">สินค้าที่ซ่อม:</span> {productType} {productDetail}</div>
                     </div>
                     <div className="mt-4 pt-4 border-t border-gray-400 print:border-black text-center text-[10px] text-black">
@@ -754,9 +755,9 @@ export default function Dashboard() {
                       <div className="flex border-b border-black text-sm">
                         <div className="flex-1 p-2 border-r border-black flex items-center">
                           <span>วัน / เดือน / ปี</span>
-                          <span className="flex-1 border-b border-dotted border-black mx-2 text-center text-blue-700">{new Date().toLocaleDateString('th-TH')}</span>
+                          <span className="flex-1 border-b border-dotted border-black mx-2 text-center text-blue-700">{(customerData?.createdAt ? new Date(customerData.createdAt) : new Date()).toLocaleDateString('th-TH')}</span>
                           <span>เวลา</span>
-                          <span className="w-24 border-b border-dotted border-black ml-2 text-center text-blue-700">{new Date().toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'})}</span>
+                          <span className="w-24 border-b border-dotted border-black ml-2 text-center text-blue-700">{(customerData?.createdAt ? new Date(customerData.createdAt) : new Date()).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'})}</span>
                         </div>
                         <div className="w-1/3 p-2 flex items-center">
                           <span>เลขที่</span>
