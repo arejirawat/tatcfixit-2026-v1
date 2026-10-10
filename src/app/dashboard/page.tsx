@@ -202,23 +202,7 @@ export default function Dashboard() {
     setStep(4);
   };
 
-  const reprintJob = (job: any) => {
-    const nameParts = (job.customer?.name || '').split(' ');
-    setCustomerData({
-      jobId: job.jobId,
-      citizenId: job.customer?.citizenId || '-',
-      firstName: nameParts[0] || '',
-      lastName: nameParts.slice(1).join(' ') || '',
-      address: job.customer?.address || '-',
-      photo: job.customer?.photo || null,
-      title: ''
-    });
-    setPhone(job.customer?.phone || '-');
-    setProductType(job.category?.name || '');
-    setProductDetail(job.itemDetail || '');
-    setSymptoms(job.symptoms || '');
-    setStep(4);
-  };
+  
 
   const updateJobStatus = async (jobId: string, status: string, confirmMsg: string) => {
     if (!confirm(confirmMsg)) return;
