@@ -7,6 +7,22 @@ echo     Fix IT Center - Auto Update System
 echo =======================================================
 echo.
 
+:: Check if Git is installed
+git --version >nul 2>&1
+IF %ERRORLEVEL% NEQ 0 (
+    echo INFO: Git is not installed on this machine.
+    echo INFO: Attempting to install Git automatically in the background...
+    winget install --id Git.Git -e --silent --accept-package-agreements --accept-source-agreements
+    
+    echo ===================================================================
+    echo  SUCCESS: Git has been installed automatically!
+    echo  IMPORTANT: You MUST CLOSE THIS WINDOW and open Update_FixIT.bat again
+    echo  for the new settings to take effect.
+    echo ===================================================================
+    pause
+    exit /b
+)
+
 echo [1/4] Backing up database to prevent data loss...
 if exist "prisma\dev.db" (
     copy /Y "prisma\dev.db" "dev_backup_safe.db" >nul 2>&1
