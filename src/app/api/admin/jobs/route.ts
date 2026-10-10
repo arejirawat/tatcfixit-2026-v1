@@ -26,7 +26,7 @@ export async function DELETE(request: Request) {
     }
     
     await prisma.job.delete({
-      where: { id }
+      where: { id: parseInt(id) }
     });
     
     return NextResponse.json({ success: true, message: 'Deleted successfully' });
