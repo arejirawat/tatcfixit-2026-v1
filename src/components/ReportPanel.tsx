@@ -39,7 +39,7 @@ export default function ReportPanel() {
       if (data.success) {
         setJobs(data.jobs);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
     } finally {
       setLoading(false);
@@ -155,7 +155,7 @@ export default function ReportPanel() {
       
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`Summary_Report_${filterDate}.pdf`);
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error generating PDF:', e);
       alert('เกิดข้อผิดพลาดในการสร้าง PDF: ' + (e.message || e));
     }
