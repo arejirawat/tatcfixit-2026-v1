@@ -33,6 +33,11 @@ if exist "prisma\dev.db" (
 echo.
 
 echo [2/4] Downloading latest updates from GitHub...
+if not exist ".git\" (
+    echo INFO: Git folder missing. Initializing repository...
+    git init
+    git remote add origin https://github.com/arejirawat/tatcfixit-2026-v1.git
+)
 git fetch --all
 git reset --hard origin/main
 echo.
