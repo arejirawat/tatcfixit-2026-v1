@@ -13,6 +13,7 @@ export default function TechnicianPage() {
   const [jobDetails, setJobDetails] = useState<any>(null);
   const [checking, setChecking] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const [techList, setTechList] = useState<string[]>([]);
 
   useEffect(() => {
     // Load saved settings
@@ -21,6 +22,13 @@ export default function TechnicianPage() {
     
     const savedPrefix = localStorage.getItem('techPrefix');
     if (savedPrefix) setPrefix(savedPrefix);
+
+    // Load technicians list
+    fetch('/api/technicians').then(res => res.json()).then(data => {
+      if (data.success) {
+        setTechList(data.technicians);
+      }
+    }).catch(console.error);
 
     // Setup connection status listener
     setIsOffline(!navigator.onLine);
@@ -137,12 +145,18 @@ export default function TechnicianPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อช่างผู้ซ่อม *</label>
             <input 
               type="text" 
+              list="tech-list"
               className="w-full px-3 py-2 border rounded-md text-black bg-gray-50 focus:bg-white"
               value={repairerName}
               onChange={(e) => setRepairerName(e.target.value)}
               placeholder="เช่น นายสมชาย สุขใจ"
               required
             />
+            <datalist id="tech-list">
+              {techList.map((name, i) => (
+                <option key={i} value={name} />
+              ))}
+            </datalist>
           </div>
 
           <div>
