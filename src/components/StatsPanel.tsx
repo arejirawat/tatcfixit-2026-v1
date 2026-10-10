@@ -14,15 +14,21 @@ export default function StatsPanel() {
   const [allJobs, setAllJobs] = useState<any[]>([]);
   const [stats, setStats] = useState<TechnicianStat[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterMode, setFilterMode] = useState<'all' | 'today'>('all');
+  const [filterMode, setFilterMode] = useState<'all' | 'today' | 'custom'>('all');
+  const [customDate, setCustomDate] = useState(() => {
+    // Local date string in YYYY-MM-DD
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().split('T')[0];
+  });
 
   useEffect(() => {
     fetchStats();
   }, []);
 
   useEffect(() => {
-    processStats(allJobs, filterMode);
-  }, [filterMode, allJobs]);
+    processStats(allJobs, filterMode, customDate);
+  }, [filterMode, customDate, allJobs]);
 
   async function fetchStats() {
     try {
@@ -38,19 +44,28 @@ export default function StatsPanel() {
     }
   }
 
-  function processStats(jobs: any[], mode: 'all' | 'today') {
+  function processStats(jobs: any[], mode: 'all' | 'today' | 'custom', dateStr: string) {
     const statMap: Record<string, TechnicianStat> = {};
     const todayStr = new Date().toDateString();
+    
+    // Convert YYYY-MM-DD to a standard toDateString to compare safely
+    let targetDateStr = '';
+    if (mode === 'custom' && dateStr) {
+       targetDateStr = new Date(dateStr).toDateString();
+    }
 
     jobs.forEach(job => {
       // นับเฉพาะงานที่ถูกตรวจสอบและมีการลงชื่อช่างซ่อมแล้ว
       if (job.status === 'CANCELLED') return;
       if (!job.repairerName && job.status === 'PENDING') return;
 
+      const jobDate = new Date(job.updatedAt || job.createdAt).toDateString();
+
       // Filter by mode
       if (mode === 'today') {
-        const jobDate = new Date(job.updatedAt || job.createdAt).toDateString();
         if (jobDate !== todayStr) return;
+      } else if (mode === 'custom') {
+        if (jobDate !== targetDateStr) return;
       }
 
       const name = job.repairerName ? job.repairerName.trim() : 'ช่างซ่อมทั่วไป (ไม่ระบุชื่อ)';
@@ -89,7 +104,7 @@ export default function StatsPanel() {
         <p className="text-gray-500 mt-2">สถิติผลงานการซ่อมของช่างแต่ละท่าน (จัดอันดับตามจำนวนที่ซ่อมสำเร็จ)</p>
       </div>
 
-      <div className="flex justify-center mb-8">
+      <div className="flex flex-wrap justify-center mb-8 gap-4 items-center">
         <div className="inline-flex bg-gray-100 p-1 rounded-lg">
           <button
             onClick={() => setFilterMode('today')}
@@ -97,7 +112,7 @@ export default function StatsPanel() {
               filterMode === 'today' ? 'bg-blue-600 text-white shadow' : 'text-gray-600 hover:bg-gray-200'
             }`}
           >
-            รายวัน (วันนี้)
+            วันนี้
           </button>
           <button
             onClick={() => setFilterMode('all')}
@@ -105,8 +120,23 @@ export default function StatsPanel() {
               filterMode === 'all' ? 'bg-blue-600 text-white shadow' : 'text-gray-600 hover:bg-gray-200'
             }`}
           >
-            ทั้งหมด (ตั้งแต่ต้น)
+            ทั้งหมด
           </button>
+        </div>
+
+        <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+          <span className={`px-4 py-2 font-semibold ${filterMode === 'custom' ? 'text-blue-600' : 'text-gray-600'}`}>
+            เลือกวันที่:
+          </span>
+          <input 
+            type="date" 
+            value={customDate}
+            onChange={(e) => {
+              setCustomDate(e.target.value);
+              setFilterMode('custom');
+            }}
+            className="p-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+          />
         </div>
       </div>
 
