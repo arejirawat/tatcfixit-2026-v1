@@ -37,6 +37,7 @@ export default function StatsPanel() {
 
     jobs.forEach(job => {
       // นับเฉพาะงานที่ถูกตรวจสอบและมีการลงชื่อช่างซ่อมแล้ว
+      if (job.status === 'CANCELLED') return;
       if (!job.repairerName && job.status === 'PENDING') return;
 
       const name = job.repairerName ? job.repairerName.trim() : 'ช่างซ่อมทั่วไป (ไม่ระบุชื่อ)';

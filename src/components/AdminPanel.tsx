@@ -43,7 +43,7 @@ export default function AdminPanel() {
   const handleSyncToCloud = async () => {
     setIsSyncing(true);
     try {
-      const res = await fetch('/api/admin/sync', { method: 'POST' });
+      const res = await fetch('/api/admin/sync', { method: 'PUT' });
       const data = await res.json();
       if (data.success) {
         alert(data.message);
@@ -87,7 +87,7 @@ export default function AdminPanel() {
 
   const saveSetting = async (key: string, value: string) => {
     await fetch('/api/admin/settings', {
-      method: 'POST',
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key, value })
     });
@@ -106,6 +106,28 @@ export default function AdminPanel() {
         }
       } catch (err) {
         alert('ไม่สามารถลบรายการได้');
+      }
+    }
+  };
+
+  
+  const cancelJob = async (jobId: string) => {
+    if (confirm('คุณแน่ใจหรือไม่ที่จะยกเลิกการซ่อมนี้? (ข้อมูลจะยังอยู่แต่สถานะเป็นยกเลิก)')) {
+      try {
+        const res = await fetch('/api/jobs', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId, status: 'CANCELLED' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          fetchJobs();
+          alert('อัปเดตสถานะเป็นยกเลิกเรียบร้อย');
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (e) {
+        console.error(e);
       }
     }
   };
@@ -140,7 +162,7 @@ export default function AdminPanel() {
 
     try {
       const res = await fetch('/api/admin/restore', {
-        method: 'POST',
+        method: 'PUT',
         body: formData
       });
       const data = await res.json();
@@ -165,6 +187,7 @@ export default function AdminPanel() {
       case 'RETURNED': return 'ส่งคืนแล้ว';
       case 'RETURNED_FIXED': return 'ส่งคืนแล้ว (ซ่อมได้)';
       case 'RETURNED_UNREPAIRABLE': return 'ส่งคืนแล้ว (ซ่อมไม่ได้)';
+      case 'CANCELLED': return 'ยกเลิก';
       default: return status;
     }
   };
@@ -290,11 +313,16 @@ export default function AdminPanel() {
                     <td className="px-4 py-3 text-sm">{job.customer?.phone || '-'}</td>
                     <td className="px-4 py-3 text-sm">{job.category?.name} {job.itemDetail}</td>
                     <td className="px-4 py-3 text-sm">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${job.status.startsWith('RETURNED') ? 'bg-green-100 text-green-800' : job.status === 'FIXED' ? 'bg-blue-100 text-blue-800' : job.status === 'UNREPAIRABLE' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                        {getStatusText(job.status)}
-                      </span>
-                    </td>
-                  </tr>
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${job.status.startsWith('RETURNED') ? 'bg-green-100 text-green-800' : job.status === 'FIXED' ? 'bg-blue-100 text-blue-800' : job.status === 'UNREPAIRABLE' ? 'bg-red-100 text-red-800' : job.status === 'CANCELLED' ? 'bg-gray-200 text-gray-700' : 'bg-yellow-100 text-yellow-800'}`}>
+                          {getStatusText(job.status)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {job.status !== 'CANCELLED' && (
+                          <button onClick={() => cancelJob(job.jobId)} className="text-red-500 hover:text-red-700 font-bold text-xs bg-red-50 hover:bg-red-100 px-2 py-1 rounded">ยกเลิกการซ่อม</button>
+                        )}
+                      </td>
+                    </tr>
                 ))}
                 {jobs.length === 0 && (
                   <tr>

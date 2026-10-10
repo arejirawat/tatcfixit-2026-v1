@@ -44,6 +44,7 @@ export default function ReportPanel() {
   // Calculate statistics based on Date Filter
   const totalJobs = filteredJobsByDate.length;
   const statusCount = filteredJobsByDate.reduce((acc, job) => {
+      if (job.status === 'CANCELLED') return acc;
     acc[job.status] = (acc[job.status] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
@@ -58,6 +59,7 @@ export default function ReportPanel() {
   });
 
   const categoryCount = displayedJobs.reduce((acc, job) => {
+      if (job.status === 'CANCELLED') return acc;
     const cat = job.category?.name || 'ไม่ระบุ';
     acc[cat] = (acc[cat] || 0) + 1;
     return acc;
@@ -89,6 +91,7 @@ export default function ReportPanel() {
       case 'RETURNED': return 'ส่งคืนแล้ว';
       case 'RETURNED_FIXED': return 'ส่งคืนแล้ว (ซ่อมได้)';
       case 'RETURNED_UNREPAIRABLE': return 'ส่งคืนแล้ว (ซ่อมไม่ได้)';
+      case 'CANCELLED': return 'ยกเลิก';
       default: return status;
     }
   };
@@ -100,6 +103,7 @@ export default function ReportPanel() {
       case 'WAITING_RETURN': return 'bg-orange-100 text-orange-800';
       case 'FIXED': return 'bg-blue-100 text-blue-800';
       case 'UNREPAIRABLE': return 'bg-red-100 text-red-800';
+      case 'CANCELLED': return 'bg-gray-200 text-gray-700';
       case 'RETURNED': return 'bg-green-100 text-green-800';
       case 'RETURNED_FIXED': return 'bg-green-100 text-green-800';
       case 'RETURNED_UNREPAIRABLE': return 'bg-gray-100 text-gray-800';
