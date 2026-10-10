@@ -564,6 +564,7 @@ export default function Dashboard() {
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่รับงาน</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
                           <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">การจัดการ</th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">เอกสาร</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -619,7 +620,9 @@ export default function Dashboard() {
                                   )}
                                 </>
                               )}
-                              <button onClick={() => reprintJob(job)} className="text-white bg-gray-500 hover:bg-gray-600 px-2 py-1 rounded text-xs font-medium ml-1 mt-1 sm:mt-0" title="พิมพ์เอกสารย้อนหลัง">พิมพ์</button>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <button onClick={() => reprintJob(job)} className="text-white bg-gray-500 hover:bg-gray-600 px-3 py-1.5 rounded text-xs font-medium" title="พิมพ์เอกสารย้อนหลัง">พิมพ์</button>
                             </td>
                           </tr>
                         )})}
