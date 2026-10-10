@@ -26,31 +26,8 @@ export default function Dashboard() {
   const [isFetchingJobs, setIsFetchingJobs] = useState(false);
   const [searchPrefix, setSearchPrefix] = useState('FIX-');
   const [searchJobIdPart, setSearchJobIdPart] = useState('');
-  const [initialJobCount, setInitialJobCount] = useState<number | null>(null);
-  const [hasNewJobs, setHasNewJobs] = useState(false);
   const [returnFilterStatus, setReturnFilterStatus] = useState('ALL');
   const [returnSearchText, setReturnSearchText] = useState('');
-
-  useEffect(() => {
-    fetch('/api/jobs/count').then(r => r.json()).then(d => {
-      if (d.success) setInitialJobCount(d.count);
-    }).catch(() => {});
-
-    const interval = setInterval(() => {
-      fetch('/api/jobs/count').then(r => r.json()).then(d => {
-        if (d.success) {
-          setInitialJobCount(prev => {
-            if (prev !== null && d.count > prev) {
-              setHasNewJobs(true);
-            }
-            return prev;
-          });
-        }
-      }).catch(() => {});
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -243,12 +220,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {hasNewJobs && (
-        <div className="bg-green-500 text-white p-3 text-center cursor-pointer shadow-md flex justify-center items-center gap-4 animate-pulse" onClick={() => window.location.reload()}>
-          <span>🔔 มีรายการแจ้งซ่อมใหม่เข้ามา! กรุณารีเฟรชหน้าเว็บเพื่อดูข้อมูลล่าสุด</span>
-          <button className="bg-white text-green-700 px-3 py-1 rounded font-bold text-sm">รีเฟรช (F5)</button>
-        </div>
-      )}
       <nav className="bg-[#660000] text-white shadow-md print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
