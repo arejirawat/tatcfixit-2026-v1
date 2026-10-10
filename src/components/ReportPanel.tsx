@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 import autoTable from 'jspdf-autotable';
 
 
@@ -139,19 +139,18 @@ export default function ReportPanel() {
   
   const exportPDFSummary = async () => {
     try {
-      
       const element = document.getElementById('pdf-report-template');
       if (!element) return;
       
-      
-      const canvas = await html2canvas(element, { scale: 2, useCORS: true });
-      
-      
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = await toPng(element, { 
+        pixelRatio: 2,
+        backgroundColor: '#ffffff'
+      });
       
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const rect = element.getBoundingClientRect();
+      const pdfHeight = (rect.height * pdfWidth) / rect.width;
       
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`Summary_Report_${filterDate}.pdf`);
