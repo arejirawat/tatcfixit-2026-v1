@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import autoTable from 'jspdf-autotable';
 
 
@@ -138,13 +139,13 @@ export default function ReportPanel() {
   
   const exportPDFSummary = async () => {
     try {
-      const html2canvas = (await import('html2canvas')).default;
+      
       const element = document.getElementById('pdf-report-template');
       if (!element) return;
       
-      element.style.display = 'block';
+      
       const canvas = await html2canvas(element, { scale: 2, useCORS: true });
-      element.style.display = 'none';
+      
       
       const imgData = canvas.toDataURL('image/png');
       
@@ -156,7 +157,7 @@ export default function ReportPanel() {
       pdf.save(`Summary_Report_${filterDate}.pdf`);
     } catch (e) {
       console.error('Error generating PDF:', e);
-      alert('เกิดข้อผิดพลาดในการสร้าง PDF');
+      alert('เกิดข้อผิดพลาดในการสร้าง PDF: ' + (e.message || e));
     }
   };
 
@@ -446,7 +447,7 @@ export default function ReportPanel() {
       `}} />
 
       {/* Hidden PDF Report Template */}
-      <div className="overflow-hidden h-0 w-0 absolute left-[-9999px] top-[-9999px]">
+      <div className="absolute left-[-9999px] top-[0] -z-50">
         <div id="pdf-report-template" className="bg-white text-black w-[800px] p-8 font-sans">
           {/* Header */}
           <div className="bg-blue-800 text-white p-6 text-center rounded-t-xl mb-6 shadow-sm">
