@@ -197,6 +197,143 @@ export default function ReportPanel() {
     XLSX.writeFile(wb, `Summary_Report_${filterDate}.xlsx`);
   };
 
+  const getVcareServiceType = (catName: string, itemDetail: string): string => {
+    const text = `${catName} ${itemDetail}`.toLowerCase();
+    if (/จักรยานยนต์|มอเตอร์ไซ|มอไซ|wave|scoopy|fino|click|pcx|aerox|spark|msx|เวฟ|ฟีโน่|คลิก/i.test(text)) {
+      return '4. ตรวจเช็กและซ่อมรถจักรยานยนต์';
+    }
+    if (/รถยนต์|กระบะ|เก๋ง|d-max|hilux|vigo|revo|yaris|vios|city|civic/i.test(text)) {
+      return '5. ตรวจเช็กรถยนต์';
+    }
+    if (/เครื่องมือ|ตัดหญ้า|เลื่อย|ปั๊ม|สว่าน|กบไส|เครื่องเชื่อม|พ่นยา|หินเจียร|ตู้เชื่อม|robin|makita|bosch/i.test(text)) {
+      return '6. ตรวจเช็กและซ่อมเครื่องมือประกอบอาชีพ';
+    }
+    if (/ระบบไฟฟ้า|สายไฟ|ตู้ไฟ|เบรกเกอร์|ปลั๊กไฟ|หลอดไฟ|สวิตช์/i.test(text)) {
+      return '7. ตรวจเช็กระบบไฟฟ้าเบื้องต้น';
+    }
+    if (/ครัว|อาหาร|ข้าวกล่อง/i.test(text)) {
+      return '1. โรงครัวอาชีวะ';
+    }
+    if (/พักพิง|ที่พัก/i.test(text)) {
+      return '2. ศูนย์พักพิง';
+    }
+    if (/แนะนำ|ปรึกษา|สอบถาม/i.test(text)) {
+      return '9. ให้คำแนะนำประชาชน (ให้คำปรึกษาและข้อมูลข่าวสาร)';
+    }
+    return '3. ตรวจเช็กและซ่อมเครื่องใช้ไฟฟ้า';
+  };
+
+  const getVcareStatus = (status: string): string => {
+    if (status === 'FIXED' || status === 'RETURNED_FIXED' || status === 'RETURNED') {
+      return 'เสร็จสิ้น (Completed)';
+    }
+    if (status === 'UNREPAIRABLE' || status === 'RETURNED_UNREPAIRABLE') {
+      return 'ส่งต่อ (Referred)';
+    }
+    return 'กำลังดำเนินการ (In Progress)';
+  };
+
+  const exportVcareExcel = async () => {
+    try {
+      const exportJobs = filteredJobsByDate.filter(j => j.status !== 'CANCELLED');
+      if (exportJobs.length === 0) {
+        alert('ไม่พบข้อมูลงานสำหรับ Export (หรือข้อมูลถูกยกเลิกทั้งหมด)');
+        return;
+      }
+
+      const dataRows = exportJobs.map((job, idx) => {
+        const catName = job.category?.name || 'เครื่องใช้ไฟฟ้า';
+        const serviceType = getVcareServiceType(catName, job.itemDetail || '');
+        const vcareStatus = getVcareStatus(job.status);
+        
+        let notes = `รหัสงาน: ${job.jobId}`;
+        if (job.repairerName) {
+          notes += ` | ช่าง: ${job.repairerName.trim()}`;
+        }
+        if (job.status === 'UNREPAIRABLE' || job.status === 'RETURNED_UNREPAIRABLE') {
+          notes += ` (ซ่อมไม่ได้)`;
+        }
+
+        return [
+          idx + 1,
+          centerName || 'ศูนย์บริการทั่วไป',
+          serviceType,
+          job.customer?.name || 'ประชาชนทั่วไป',
+          job.customer?.phone || '',
+          job.customer?.address || '',
+          catName,
+          job.itemDetail || '-',
+          job.symptoms || '-',
+          job.repairNotes || '',
+          0,
+          vcareStatus,
+          notes
+        ];
+      });
+
+      let wb: XLSX.WorkBook;
+      try {
+        const res = await fetch('/VCARE_Import_Template.xlsx');
+        if (res.ok) {
+          const arrayBuf = await res.arrayBuffer();
+          wb = XLSX.read(arrayBuf, { type: 'array' });
+          const sheetName = wb.SheetNames.includes('ข้อมูลบันทึกบริการ V-Care') 
+            ? 'ข้อมูลบันทึกบริการ V-Care' 
+            : wb.SheetNames[0];
+          const ws = wb.Sheets[sheetName];
+          
+          Object.keys(ws).forEach(key => {
+            if (key.startsWith('!')) return;
+            const r = parseInt(key.replace(/^[A-Z]+/, ''), 10);
+            if (r >= 2) delete ws[key];
+          });
+
+          XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: 'A2' });
+          ws['!ref'] = XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: 12, r: dataRows.length } });
+        } else {
+          throw new Error('Template fetch failed');
+        }
+      } catch (err) {
+        wb = XLSX.utils.book_new();
+        const headers = [
+          'ลำดับ', 'จุดบริการ / ศูนย์อาชีวะอาสา', 'เลือกประเภทบริการ *',
+          'ชื่อ-นามสกุล ผู้รับบริการ *', 'เบอร์โทรศัพท์ติดต่อ', 'ที่อยู่ / พื้นที่ประสบภัย',
+          'ชนิดเครื่องใช้ไฟฟ้า / สิ่งของ *', 'ยี่ห้อ / รุ่น', 'อาการเสีย / สาเหตุ *',
+          'อะไหล่ที่เปลี่ยน', 'ค่าใช้จ่าย (บาท)', 'สถานะงาน *', 'หมายเหตุเพิ่มเติม'
+        ];
+        const wsMain = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+        wsMain['!cols'] = [
+          { wch: 8 }, { wch: 25 }, { wch: 35 }, { wch: 25 }, { wch: 15 },
+          { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 30 }, { wch: 20 },
+          { wch: 15 }, { wch: 25 }, { wch: 30 }
+        ];
+
+        const lookupData = [
+          ['ประเภทบริการ', 'สถานะงาน'],
+          ['1. โรงครัวอาชีวะ', 'เสร็จสิ้น (Completed)'],
+          ['2. ศูนย์พักพิง', 'กำลังดำเนินการ (In Progress)'],
+          ['3. ตรวจเช็กและซ่อมเครื่องใช้ไฟฟ้า', 'รออะไหล่ (Pending Spare Parts)'],
+          ['4. ตรวจเช็กและซ่อมรถจักรยานยนต์', 'ส่งต่อ (Referred)'],
+          ['5. ตรวจเช็กรถยนต์', null],
+          ['6. ตรวจเช็กและซ่อมเครื่องมือประกอบอาชีพ', null],
+          ['7. ตรวจเช็กระบบไฟฟ้าเบื้องต้น', null],
+          ['8. อื่น ๆ (ช่วยเหลือผู้ประสบภัยอื่น ๆ)', null],
+          ['9. ให้คำแนะนำประชาชน (ให้คำปรึกษาและข้อมูลข่าวสาร)', null]
+        ];
+        const wsLookup = XLSX.utils.aoa_to_sheet(lookupData);
+
+        XLSX.utils.book_append_sheet(wb, wsMain, 'ข้อมูลบันทึกบริการ V-Care');
+        XLSX.utils.book_append_sheet(wb, wsLookup, 'Lookup_Data');
+      }
+
+      const fileName = `VCARE_Import_${filterDate === 'ALL' ? 'ALL' : filterDate}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+    } catch (e: any) {
+      console.error('Error exporting VCARE Excel:', e);
+      alert('เกิดข้อผิดพลาดในการสร้างไฟล์ V-Care: ' + (e.message || e));
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6 max-w-7xl mx-auto mt-4 text-black relative">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b pb-4 print:hidden">
@@ -210,6 +347,10 @@ export default function ReportPanel() {
               <button onClick={exportExcelSummary} className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm flex items-center gap-1 shadow-sm">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 Excel สำหรับแก้ไข
+              </button>
+              <button onClick={exportVcareExcel} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center gap-1 shadow-sm font-medium">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Excel V-Care (สำหรับ Import)
               </button>
             </div>
           </div>
