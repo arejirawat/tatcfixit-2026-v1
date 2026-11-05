@@ -66,7 +66,7 @@ start /min "Smartcard Agent" cmd /k "%PYTHON_CMD% agent.py"
 :: 6. Start Web Server
 echo INFO: Starting Web Server (Port 3000)...
 echo INFO: If Windows Defender Firewall prompts, please click Allow Access.
-start /min "FixIT Web Server" cmd /k "npm run dev"
+start /min "FixIT Web Server" cmd /k "set NEXT_TELEMETRY_DISABLED=1 && npm run dev"
 
 :: 7. Wait and open browser
 echo INFO: Preparing the web application... 
