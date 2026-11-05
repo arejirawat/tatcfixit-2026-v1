@@ -18,6 +18,7 @@ const getLanIps = () => {
 const nextConfig: NextConfig = {
   /* config options here */
   allowedDevOrigins: getLanIps(),
+  devIndicators: false,
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
