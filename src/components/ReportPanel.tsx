@@ -275,6 +275,30 @@ export default function ReportPanel() {
       ? prev.filter(id => !selectableIds.includes(id))
       : [...new Set([...prev, ...selectableIds])]);
 
+  // ทำเครื่องหมาย "ส่งแล้ว" โดยไม่ส่งออกไฟล์ — สำหรับงานที่เคยกรอกเข้า V-Care ไปแล้วด้วยวิธีอื่น
+  // (เช่น งานเก่าในเครื่องที่อัปเดตมาจากเวอร์ชันก่อน 1.2.0 ซึ่งยังไม่มีเครื่องหมาย)
+  const markSelectedSent = async () => {
+    const targets = selectedJobs.filter(j => !j.vcareExportedAt);
+    if (targets.length === 0) {
+      alert(selectedJobs.length === 0
+        ? 'กรุณาติ๊กเลือกงานในตารางก่อน (กดตัวกรอง "รอส่ง" แล้วติ๊กช่องบนหัวตารางเพื่อเลือกทั้งหมด)'
+        : 'งานที่เลือกมีเครื่องหมาย "ส่งแล้ว" อยู่แล้วทั้งหมด');
+      return;
+    }
+    if (!confirm(
+      `ทำเครื่องหมาย "ส่ง V-Care แล้ว" ให้ ${targets.length} รายการ โดยไม่ส่งออกไฟล์?\n\n` +
+      `ใช้เฉพาะงานที่กรอกเข้า V-Care ไปแล้วจริง — งานเหล่านี้จะไม่อยู่ในกลุ่ม "รอส่ง" อีก\n` +
+      `(ยกเลิกเครื่องหมายทีละงานได้ในหน้ารายละเอียดงาน)`
+    )) return;
+    try {
+      const count = await markVcare(targets.map(j => j.jobId), true);
+      setSelectedJobIds([]);
+      alert(`ทำเครื่องหมายส่งแล้ว ${count} รายการ`);
+    } catch (e: any) {
+      alert('ไม่สำเร็จ: ' + (e.message || e));
+    }
+  };
+
   // ส่งออกงานที่เลือก (ใช้ส่งออกซ้ำ หรือเลือกส่งบางรายการ)
   const exportVcareSelected = async () => {
     try {
@@ -446,9 +470,18 @@ export default function ReportPanel() {
               </button>
             ))}
             {selectedJobIds.length > 0 && (
-              <button onClick={() => setSelectedJobIds([])} className="ml-auto text-gray-500 underline">
-                ล้างที่เลือก ({selectedJobs.length})
-              </button>
+              <span className="ml-auto flex items-center gap-2">
+                <button
+                  onClick={markSelectedSent}
+                  className="px-2 py-1 rounded border border-green-600 text-green-700 bg-white hover:bg-green-50"
+                  title="สำหรับงานที่เคยกรอกเข้า V-Care ไปแล้ว — ไม่ส่งออกไฟล์"
+                >
+                  ทำเครื่องหมายว่าส่งแล้ว ({selectedJobs.filter(j => !j.vcareExportedAt).length})
+                </button>
+                <button onClick={() => setSelectedJobIds([])} className="text-gray-500 underline">
+                  ล้างที่เลือก ({selectedJobs.length})
+                </button>
+              </span>
             )}
           </div>
           <div className="overflow-x-auto max-h-96 overflow-y-auto">
