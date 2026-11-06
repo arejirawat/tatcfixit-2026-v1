@@ -523,7 +523,7 @@ export default function ReportPanel() {
                 <h2 className="font-bold border-b pb-2 mb-4 text-lg">ข้อมูลผู้ใช้บริการ</h2>
                 <div className="grid grid-cols-2 gap-4">
                   <div><span className="font-semibold">ชื่อ-สกุล:</span> {selectedJob.customer?.name}</div>
-                  <div><span className="font-semibold">บัตรประชาชน:</span> {selectedJob.customer?.citizenId}</div>
+                  <div><span className="font-semibold">บัตรประชาชน:</span> {selectedJob.customer?.citizenId?.startsWith('NOID-') ? '-' : selectedJob.customer?.citizenId}</div>
                   <div className="col-span-2"><span className="font-semibold">ที่อยู่:</span> {selectedJob.customer?.address || '-'}</div>
                   <div><span className="font-semibold">เบอร์โทรศัพท์:</span> {selectedJob.customer?.phone || '-'}</div>
                 </div>

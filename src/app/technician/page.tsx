@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import AppVersion from '@/components/AppVersion';
 
 export default function TechnicianPage() {
   const [jobIdPart, setJobIdPart] = useState('');
@@ -52,6 +53,7 @@ export default function TechnicianPage() {
       case 'RETURNED': return 'ส่งคืนแล้ว';
       case 'RETURNED_FIXED': return 'ส่งคืนแล้ว (ซ่อมได้)';
       case 'RETURNED_UNREPAIRABLE': return 'ส่งคืนแล้ว (ซ่อมไม่ได้)';
+      case 'CANCELLED': return 'ยกเลิก';
       default: return status;
     }
   };
@@ -261,6 +263,10 @@ export default function TechnicianPage() {
             {loading ? 'กำลังบันทึก...' : 'บันทึกข้อมูล'}
           </button>
         </form>
+
+        <div className="mt-6 text-center text-xs text-gray-400">
+          เวอร์ชัน <AppVersion />
+        </div>
       </div>
     </div>
   );

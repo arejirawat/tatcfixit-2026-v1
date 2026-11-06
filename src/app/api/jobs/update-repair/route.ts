@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../../../../../lib/prisma';
 
 export async function POST(request: Request) {
   try {
@@ -22,6 +20,10 @@ export async function POST(request: Request) {
 
     if (job.status.startsWith('RETURNED')) {
       return NextResponse.json({ success: false, message: 'งานนี้ถูกส่งคืนลูกค้าไปแล้ว ไม่สามารถแก้ไขได้' }, { status: 400 });
+    }
+
+    if (job.status === 'CANCELLED') {
+      return NextResponse.json({ success: false, message: 'งานนี้ถูกยกเลิกไปแล้ว ไม่สามารถแก้ไขได้' }, { status: 400 });
     }
 
     await prisma.job.update({

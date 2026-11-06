@@ -1,9 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AdminPanel from '@/components/AdminPanel';
 import ReportPanel from '@/components/ReportPanel';
 import StatsPanel from '@/components/StatsPanel';
+import AppVersion from '@/components/AppVersion';
+
+// ลูกค้าที่ไม่มีเลขบัตรจะถูกเก็บด้วยรหัส NOID-... ในฐานข้อมูล ให้แสดงเป็น '-' บนหน้าจอ/ใบงาน
+const displayCitizenId = (id?: string | null) => (!id || id.startsWith('NOID-') ? '-' : id);
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'register' | 'report' | 'admin' | 'stats'>('register');
@@ -28,6 +32,21 @@ export default function Dashboard() {
   const [searchJobIdPart, setSearchJobIdPart] = useState('');
   const [returnFilterStatus, setReturnFilterStatus] = useState('ALL');
   const [returnSearchText, setReturnSearchText] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  // ล็อกทันทีที่กด (state อัปเดตไม่ทันเมื่อกดรัวๆ) ป้องกันการบันทึกใบงานซ้ำ
+  const savingLock = useRef(false);
+
+  const fetchCategories = async () => {
+    try {
+      const catRes = await fetch('/api/categories');
+      const catData = await catRes.json();
+      if (catData.success) {
+        setCategories(catData.categories);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -42,11 +61,7 @@ export default function Dashboard() {
           });
         }
 
-        const catRes = await fetch('/api/categories');
-        const catData = await catRes.json();
-        if (catData.success) {
-          setCategories(catData.categories);
-        }
+        await fetchCategories();
       } catch (e) {
         console.error(e);
       }
@@ -90,10 +105,27 @@ export default function Dashboard() {
     setProductDetail('');
     setSymptoms('');
     setPhone('');
+    setIsManualEntry(false);
+    setManualForm({ citizenId: '', title: '', firstName: '', lastName: '', address: '' });
+    setCustomerJobs([]);
+    setSearchJobIdPart('');
+    setReturnFilterStatus('ALL');
+    setReturnSearchText('');
     setStatusMsg('กรุณาเสียบบัตรประชาชนที่เครื่องอ่าน');
   };
 
   const saveJob = async () => {
+    if (savingLock.current) return;
+    if (!productType.trim()) {
+      alert('กรุณาระบุชนิดสิ่งของ');
+      return;
+    }
+    if (!symptoms.trim()) {
+      alert('กรุณาระบุอาการที่เสีย');
+      return;
+    }
+    savingLock.current = true;
+    setIsSaving(true);
     try {
       const payload = {
         citizenId: customerData.citizenId,
@@ -118,16 +150,18 @@ export default function Dashboard() {
         // อัปเดต customerData ให้มี jobId กลับมาเพื่อแสดงบนใบงาน
         setCustomerData({ ...customerData, jobId: data.job.jobId, createdAt: data.job.createdAt });
         
-        if (productType && !categories.find(c => c.name === productType.trim())) {
-          setCategories(prev => [...prev, { id: 'new-' + Date.now(), name: productType.trim() }]);
-        }
-        
+        // ดึงรายการชนิดสิ่งของใหม่จากฐานข้อมูล (ได้ id จริง ใช้ลบได้)
+        fetchCategories();
+
         setStep(4);
       } else {
         alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + data.message);
       }
     } catch (error) {
       alert('ไม่สามารถเชื่อมต่อฐานข้อมูลได้');
+    } finally {
+      savingLock.current = false;
+      setIsSaving(false);
     }
   };
 
@@ -158,13 +192,13 @@ export default function Dashboard() {
     if (!searchJobIdPart) return;
     setIsFetchingJobs(true);
     try {
-      const res = await fetch(`/api/jobs/search?jobId=${fullJobId}`);
+      const res = await fetch(`/api/jobs/search?jobId=${encodeURIComponent(fullJobId)}`);
       const data = await res.json();
       if (data.success) {
         // แตกชื่อ นามสกุล จาก data.job.customer.name
         const nameParts = data.job.customer.name.split(' ');
         setCustomerData({
-          citizenId: data.job.customer.citizenId,
+          citizenId: displayCitizenId(data.job.customer.citizenId),
           firstName: nameParts[0] || '',
           lastName: nameParts.slice(1).join(' ') || '',
           address: data.job.customer.address,
@@ -189,7 +223,7 @@ export default function Dashboard() {
     setCustomerData({
       jobId: job.jobId,
         createdAt: job.createdAt,
-      citizenId: job.customer?.citizenId || '-',
+      citizenId: displayCitizenId(job.customer?.citizenId),
       firstName: nameParts[0] || '',
       lastName: nameParts.slice(1).join(' ') || '',
       address: job.customer?.address || '-',
@@ -369,6 +403,10 @@ export default function Dashboard() {
                     <div className="mt-6 flex justify-end gap-2">
                       <button onClick={() => setIsManualEntry(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded">ยกเลิก</button>
                       <button onClick={() => {
+                        if (!manualForm.firstName.trim()) {
+                          alert('กรุณากรอกชื่อผู้ใช้บริการ');
+                          return;
+                        }
                         setCustomerData({
                           citizenId: manualForm.citizenId || '-',
                           title: manualForm.title,
@@ -411,7 +449,13 @@ export default function Dashboard() {
                       </div>
                       <div className="mt-6 flex justify-end">
                         <button onClick={() => setCustomerData(null)} className="mr-4 text-gray-600 hover:text-gray-900">ยกเลิก</button>
-                        <button onClick={() => setStep(2)} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded">
+                        <button onClick={() => {
+                          if (!customerData.firstName?.trim()) {
+                            alert('ไม่พบชื่อผู้ใช้บริการ กรุณาอ่านบัตรใหม่หรือกรอกข้อมูลเอง');
+                            return;
+                          }
+                          setStep(2);
+                        }} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded">
                           ถัดไป (เลือกระบบ)
                         </button>
                       </div>
@@ -508,8 +552,8 @@ export default function Dashboard() {
                 </div>
                 <div className="mt-6 flex justify-between">
                   <button onClick={() => setStep(2)} className="text-gray-500 hover:text-gray-800 px-4 py-2">ย้อนกลับ</button>
-                  <button onClick={saveJob} className="bg-blue-600 hover:bg-[#4a0000] text-white font-bold py-2 px-6 rounded">
-                    บันทึกและออกใบรับงาน
+                  <button onClick={saveJob} disabled={isSaving} className="bg-blue-600 hover:bg-[#4a0000] text-white font-bold py-2 px-6 rounded disabled:bg-gray-400">
+                    {isSaving ? 'กำลังบันทึก...' : 'บันทึกและออกใบรับงาน'}
                   </button>
                 </div>
               </div>
@@ -935,6 +979,7 @@ export default function Dashboard() {
 
       <footer className="text-center py-6 text-sm text-gray-500 print:hidden mt-auto">
         designed by Jirawat Saengkhunnatham , Thai-Austrian Technical College 081069 + AI
+        <div className="mt-1 text-xs text-gray-400">เวอร์ชัน <AppVersion /></div>
       </footer>
     </div>
   );

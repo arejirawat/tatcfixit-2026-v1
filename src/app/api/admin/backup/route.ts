@@ -32,9 +32,10 @@ export async function DELETE() {
     await prisma.customer.deleteMany();
     
     // Optionally we can reset settings, but usually we just want to reset the QUEUE_NUMBER to 1
-    await prisma.setting.update({
+    await prisma.setting.upsert({
       where: { key: 'QUEUE_NUMBER' },
-      data: { value: '1' }
+      update: { value: '1' },
+      create: { key: 'QUEUE_NUMBER', value: '1' }
     });
 
     return NextResponse.json({ success: true });
