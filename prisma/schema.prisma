@@ -48,6 +48,13 @@ model Job {
   repairNotes  String?  // ผลการซ่อม/รายละเอียดการซ่อม
   repairerName String?  // ชื่อช่างผู้ซ่อม
   status       String   @default("PENDING") // PENDING, REPAIRING, WAITING_RETURN, RETURNED
+  // ข้อมูลสำหรับส่ง OVEC V-Care (v1.2.0)
+  serviceType     String?   // รหัสประเภทบริการ V-Care: APPLIANCE, MOTORCYCLE, CAR, TOOL, HOME_ELEC
+  brandModel      String?   // ยี่ห้อ / รุ่น
+  licensePlate    String?   // ทะเบียนรถ / จังหวัด (งานรถ)
+  partsUsed       String?   // อะไหล่ที่เปลี่ยน
+  partsCost       Float?    // ค่าใช้จ่าย (บาท)
+  vcareExportedAt DateTime? // วันที่ส่งออกไป V-Care แล้ว (null = ยังไม่ส่ง)
   isSynced     Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

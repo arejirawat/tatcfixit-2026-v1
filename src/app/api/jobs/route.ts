@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '../../../../lib/prisma';
+import { getServiceType, guessServiceType } from '@/lib/vcare';
 
 // ลูกค้าที่ไม่มีเลขบัตร (กรอกเอง) จะได้รหัสเฉพาะตัวที่ขึ้นต้นด้วยค่านี้ เพื่อไม่ให้ถูกรวมเป็นคนเดียวกัน
 const NO_ID_PREFIX = 'NOID-';
@@ -102,6 +103,10 @@ export async function POST(request: Request) {
           categoryId: category.id,
           itemDetail: data.productDetail || '',
           symptoms,
+          serviceType: getServiceType(data.serviceType)?.code
+            ?? guessServiceType(categoryName, data.productDetail || ''),
+          brandModel: (data.brandModel || '').trim() || null,
+          licensePlate: (data.licensePlate || '').trim() || null,
           status: 'PENDING',
           ...(overrideDate && { createdAt: overrideDate })
         }

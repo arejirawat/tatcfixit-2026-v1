@@ -3,7 +3,11 @@ import prisma from '../../../../../lib/prisma';
 
 export async function POST(request: Request) {
   try {
-    const { jobId, status, repairNotes, repairerName } = await request.json();
+    const { jobId, status, repairNotes, repairerName, partsUsed, partsCost } = await request.json();
+    const cost = partsCost === '' || partsCost === null || partsCost === undefined ? null : Number(partsCost);
+    if (cost !== null && (!Number.isFinite(cost) || cost < 0)) {
+      return NextResponse.json({ success: false, message: 'ค่าใช้จ่ายต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป' }, { status: 400 });
+    }
 
     if (!jobId || !status || !repairerName) {
       return NextResponse.json({ success: false, message: 'กรุณาส่งข้อมูลให้ครบถ้วน' }, { status: 400 });
@@ -31,7 +35,10 @@ export async function POST(request: Request) {
       data: {
         status,
         repairNotes,
-        repairerName
+        repairerName,
+        partsUsed: (partsUsed || '').trim() || null,
+        partsCost: cost,
+        isSynced: false
       }
     });
 

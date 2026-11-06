@@ -14,6 +14,7 @@ export default function AdminPanel() {
   const [isOverrideDate, setIsOverrideDate] = useState(false);
   const [centerName, setCenterName] = useState('วิทยาลัยเทคนิคสัตหีบ');
   const [contactPhone, setContactPhone] = useState('');
+  const [vcareCenter, setVcareCenter] = useState('');
   const [activeMenu, setActiveMenu] = useState('overview');
 
   const [unsyncedCounts, setUnsyncedCounts] = useState({ total: 0, customers: 0, jobs: 0, categories: 0 });
@@ -72,6 +73,7 @@ export default function AdminPanel() {
         if (s.key === 'QUEUE_NUMBER') setQueueNumber(s.value);
         if (s.key === 'CENTER_NAME') setCenterName(s.value);
         if (s.key === 'CONTACT_PHONE') setContactPhone(s.value);
+        if (s.key === 'VCARE_CENTER') setVcareCenter(s.value);
           if (s.key === 'OVERRIDE_DATE') {
             if (s.value) {
               setOverrideDate(s.value);
@@ -351,6 +353,14 @@ export default function AdminPanel() {
               <input type="text" value={contactPhone} onChange={e => setContactPhone(e.target.value)} className="border p-2 rounded w-full" placeholder="038-xxx-xxx" />
               <button onClick={() => saveSetting('CONTACT_PHONE', contactPhone)} className="bg-blue-600 text-white px-4 rounded hover:bg-blue-700">บันทึก</button>
             </div>
+          </div>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-1">จุดบริการใน V-Care (พิมพ์ให้ตรงกับชื่อในเว็บ V-Care)</label>
+            <div className="flex gap-2">
+              <input type="text" value={vcareCenter} onChange={e => setVcareCenter(e.target.value)} className="border p-2 rounded w-full" placeholder={`เว้นว่าง = ใช้ชื่อศูนย์ซ่อม (${centerName})`} />
+              <button onClick={() => saveSetting('VCARE_CENTER', vcareCenter.trim())} className="bg-blue-600 text-white px-4 rounded hover:bg-blue-700">บันทึก</button>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">ถ้าชื่อไม่ตรง โปรแกรมกรอก V-Care จะถามให้เลือกจุดบริการทุกครั้งที่รัน</p>
           </div>
 
           <h2 className="text-xl font-semibold mb-6 mt-10 border-b pb-2">ตั้งค่ารหัสคิวงาน (Job ID)</h2>

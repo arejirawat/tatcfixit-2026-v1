@@ -8,6 +8,8 @@ export default function TechnicianPage() {
   const [prefix, setPrefix] = useState('FIX-');
   const [repairerName, setRepairerName] = useState('');
   const [repairNotes, setRepairNotes] = useState('');
+  const [partsUsed, setPartsUsed] = useState('');
+  const [partsCost, setPartsCost] = useState('');
   const [status, setStatus] = useState<'FIXED' | 'UNREPAIRABLE' | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -107,7 +109,7 @@ export default function TechnicianPage() {
       const response = await fetch(`/api/jobs/update-repair`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId: getFullJobId(), status, repairNotes, repairerName })
+        body: JSON.stringify({ jobId: getFullJobId(), status, repairNotes, repairerName, partsUsed, partsCost })
       });
 
       const data = await response.json();
@@ -115,6 +117,8 @@ export default function TechnicianPage() {
         setMessage(`อัปเดตงาน ${getFullJobId()} สำเร็จเป็นสถานะ: ${status === 'FIXED' ? 'ซ่อมได้' : 'ซ่อมไม่ได้'}`);
         setJobIdPart('');
         setRepairNotes('');
+        setPartsUsed('');
+        setPartsCost('');
         setStatus(null);
         setJobDetails(null);
       } else {
@@ -233,6 +237,31 @@ export default function TechnicianPage() {
               onChange={(e) => setRepairNotes(e.target.value)}
               placeholder="เช่น เปลี่ยนอะไหล่ C ช็อต, หรือ บอร์ดพังไม่มีอะไหล่"
             ></textarea>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">อะไหล่ที่เปลี่ยน</label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border rounded-md text-black bg-white"
+                value={partsUsed}
+                onChange={(e) => setPartsUsed(e.target.value)}
+                placeholder="เช่น คาปาซิเตอร์ 1.5uF"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">ค่าใช้จ่าย (บาท)</label>
+              <input
+                type="number"
+                inputMode="decimal"
+                min="0"
+                className="w-full px-3 py-2 border rounded-md text-black bg-white"
+                value={partsCost}
+                onChange={(e) => setPartsCost(e.target.value)}
+                placeholder="0"
+              />
+            </div>
           </div>
 
           <div>

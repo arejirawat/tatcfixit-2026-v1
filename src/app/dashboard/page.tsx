@@ -5,6 +5,7 @@ import AdminPanel from '@/components/AdminPanel';
 import ReportPanel from '@/components/ReportPanel';
 import StatsPanel from '@/components/StatsPanel';
 import AppVersion from '@/components/AppVersion';
+import { VCARE_SERVICE_TYPES, guessServiceType, isVehicle } from '@/lib/vcare';
 
 // ลูกค้าที่ไม่มีเลขบัตรจะถูกเก็บด้วยรหัส NOID-... ในฐานข้อมูล ให้แสดงเป็น '-' บนหน้าจอ/ใบงาน
 const displayCitizenId = (id?: string | null) => (!id || id.startsWith('NOID-') ? '-' : id);
@@ -33,6 +34,11 @@ export default function Dashboard() {
   const [returnFilterStatus, setReturnFilterStatus] = useState('ALL');
   const [returnSearchText, setReturnSearchText] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  // ข้อมูลสำหรับ V-Care: ประเภทบริการ ('' = ให้ระบบเลือกจากชนิดสิ่งของ), ยี่ห้อ/รุ่น, ทะเบียนรถ
+  const [serviceTypeChoice, setServiceTypeChoice] = useState('');
+  const [brandModel, setBrandModel] = useState('');
+  const [licensePlate, setLicensePlate] = useState('');
+  const effectiveServiceType = serviceTypeChoice || guessServiceType(productType, productDetail);
   // ล็อกทันทีที่กด (state อัปเดตไม่ทันเมื่อกดรัวๆ) ป้องกันการบันทึกใบงานซ้ำ
   const savingLock = useRef(false);
 
@@ -105,6 +111,9 @@ export default function Dashboard() {
     setProductDetail('');
     setSymptoms('');
     setPhone('');
+    setServiceTypeChoice('');
+    setBrandModel('');
+    setLicensePlate('');
     setIsManualEntry(false);
     setManualForm({ citizenId: '', title: '', firstName: '', lastName: '', address: '' });
     setCustomerJobs([]);
@@ -136,7 +145,10 @@ export default function Dashboard() {
         phone: phone,
         productType: productType,
         productDetail: productDetail,
-        symptoms: symptoms
+        symptoms: symptoms,
+        serviceType: effectiveServiceType,
+        brandModel: brandModel,
+        licensePlate: isVehicle(effectiveServiceType) ? licensePlate : ''
       };
       
       const res = await fetch('/api/jobs', {
@@ -233,6 +245,9 @@ export default function Dashboard() {
     setPhone(job.customer?.phone || '-');
     setProductType(job.category?.name || '');
     setProductDetail(job.itemDetail || '');
+    setBrandModel(job.brandModel || '');
+    setLicensePlate(job.licensePlate || '');
+    setServiceTypeChoice(job.serviceType || '');
     setSymptoms(job.symptoms || '');
     setStep(4);
   };
@@ -535,12 +550,49 @@ export default function Dashboard() {
                       ))}
                     </datalist>
                   </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-medium text-gray-700 mb-1">ประเภทบริการ (สำหรับ V-Care)</label>
+                      <select
+                        className="w-full border-gray-300 rounded p-2 text-black border bg-white"
+                        value={effectiveServiceType}
+                        onChange={(e) => setServiceTypeChoice(e.target.value)}
+                      >
+                        {VCARE_SERVICE_TYPES.map(t => (
+                          <option key={t.code} value={t.code}>{t.label}</option>
+                        ))}
+                      </select>
+                      {!serviceTypeChoice && <p className="text-xs text-gray-500 mt-1">ระบบเลือกให้จากชนิดสิ่งของ แก้ได้ถ้าไม่ถูก</p>}
+                    </div>
+                    <div>
+                      <label className="block font-medium text-gray-700 mb-1">ยี่ห้อ / รุ่น</label>
+                      <input
+                        type="text"
+                        className="w-full border-gray-300 rounded p-2 text-black border"
+                        placeholder="เช่น Hatari 16 นิ้ว, Honda Wave 110i"
+                        value={brandModel}
+                        onChange={(e) => setBrandModel(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  {isVehicle(effectiveServiceType) && (
+                    <div>
+                      <label className="block font-medium text-gray-700 mb-1">ทะเบียนรถ / จังหวัด</label>
+                      <input
+                        type="text"
+                        className="w-full border-gray-300 rounded p-2 text-black border"
+                        placeholder="เช่น 1กข 1234 ชลบุรี"
+                        value={licensePlate}
+                        onChange={(e) => setLicensePlate(e.target.value)}
+                      />
+                    </div>
+                  )}
                   <div>
-                    <label className="block font-medium text-gray-700 mb-1">รายละเอียดของที่นำมาซ่อม (ยี่ห้อ/รุ่น/สี/ลักษณะ)</label>
+                    <label className="block font-medium text-gray-700 mb-1">รายละเอียดเพิ่มเติม (สี/ลักษณะ/อุปกรณ์ที่ติดมา)</label>
                     <input 
                       type="text" 
                       className="w-full border-gray-300 rounded p-2 text-black border" 
-                      placeholder="เช่น Hatari 16 นิ้ว สีเขียว" 
+                      placeholder="เช่น สีเขียว มีรีโมท"
                       value={productDetail} 
                       onChange={(e) => setProductDetail(e.target.value)} 
                     />
@@ -718,7 +770,7 @@ export default function Dashboard() {
                       <div><span className="font-bold">รหัสคิวงาน:</span> {customerData?.jobId || 'กำลังออกรหัส...'}</div>
                       <div><span className="font-bold">ชื่อลูกค้า:</span> {customerData?.firstName} {customerData?.lastName}</div>
                       <div><span className="font-bold">วันที่ส่งซ่อม:</span> {(customerData?.createdAt ? new Date(customerData.createdAt) : new Date()).toLocaleDateString('th-TH')}</div>
-                      <div><span className="font-bold">สินค้าที่ซ่อม:</span> {productType} {productDetail}</div>
+                      <div><span className="font-bold">สินค้าที่ซ่อม:</span> {[productType, brandModel, productDetail].filter(Boolean).join(' ')}</div>
                     </div>
                     <div className="mt-4 pt-4 border-t border-gray-400 print:border-black text-center text-[10px] text-black">
                       <p>กรุณานำคูปองนี้มาด้วยเมื่อมารับเครื่อง</p>
@@ -842,7 +894,7 @@ export default function Dashboard() {
                           </div>
                           <div className="flex">
                             <span>สิ่งของที่นำมาซ่อม</span>
-                            <span className="flex-1 border-b border-dotted border-black ml-2 pl-2 text-blue-700">{productDetail}</span>
+                            <span className="flex-1 border-b border-dotted border-black ml-2 pl-2 text-blue-700">{[brandModel, productDetail, licensePlate && `ทะเบียน ${licensePlate}`].filter(Boolean).join(' ')}</span>
                           </div>
                           <div>
                             <div>ประเภทเครื่องใช้ที่ซ่อม</div>

@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
 import autoTable from 'jspdf-autotable';
+import { buildVcareSheets, getServiceType, guessServiceType, isClosedJob, isPendingVcare } from '@/lib/vcare';
 
 
 export default function ReportPanel() {
@@ -14,6 +15,7 @@ export default function ReportPanel() {
   const [filterDate, setFilterDate] = useState<string>('ALL');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [centerName, setCenterName] = useState('ศูนย์ Fix IT Center');
+  const [vcareCenter, setVcareCenter] = useState('');
 
   // Popup state
   const [selectedJob, setSelectedJob] = useState<any>(null);
@@ -26,6 +28,8 @@ export default function ReportPanel() {
       if (data.success) {
         const center = data.settings.find((s: any) => s.key === 'CENTER_NAME');
         if (center) setCenterName(center.value);
+        const vc = data.settings.find((s: any) => s.key === 'VCARE_CENTER');
+        if (vc) setVcareCenter(vc.value);
       }
     } catch (e: any) {
       console.error(e);
@@ -197,141 +201,68 @@ export default function ReportPanel() {
     XLSX.writeFile(wb, `Summary_Report_${filterDate}.xlsx`);
   };
 
-  const getVcareServiceType = (catName: string, itemDetail: string): string => {
-    const text = `${catName} ${itemDetail}`.toLowerCase();
-    if (/จักรยานยนต์|มอเตอร์ไซ|มอไซ|wave|scoopy|fino|click|pcx|aerox|spark|msx|เวฟ|ฟีโน่|คลิก/i.test(text)) {
-      return '4. ตรวจเช็กและซ่อมรถจักรยานยนต์';
-    }
-    if (/รถยนต์|กระบะ|เก๋ง|d-max|hilux|vigo|revo|yaris|vios|city|civic/i.test(text)) {
-      return '5. ตรวจเช็กรถยนต์';
-    }
-    if (/เครื่องมือ|ตัดหญ้า|เลื่อย|ปั๊ม|สว่าน|กบไส|เครื่องเชื่อม|พ่นยา|หินเจียร|ตู้เชื่อม|robin|makita|bosch/i.test(text)) {
-      return '6. ตรวจเช็กและซ่อมเครื่องมือประกอบอาชีพ';
-    }
-    if (/ระบบไฟฟ้า|สายไฟ|ตู้ไฟ|เบรกเกอร์|ปลั๊กไฟ|หลอดไฟ|สวิตช์/i.test(text)) {
-      return '7. ตรวจเช็กระบบไฟฟ้าเบื้องต้น';
-    }
-    if (/ครัว|อาหาร|ข้าวกล่อง/i.test(text)) {
-      return '1. โรงครัวอาชีวะ';
-    }
-    if (/พักพิง|ที่พัก/i.test(text)) {
-      return '2. ศูนย์พักพิง';
-    }
-    if (/แนะนำ|ปรึกษา|สอบถาม/i.test(text)) {
-      return '9. ให้คำแนะนำประชาชน (ให้คำปรึกษาและข้อมูลข่าวสาร)';
-    }
-    return '3. ตรวจเช็กและซ่อมเครื่องใช้ไฟฟ้า';
+  // ---------------- V-Care ----------------
+  // งานที่ปิดแล้วและยังไม่เคยส่งออก (ไม่ขึ้นกับตัวกรองวันที่)
+  const pendingVcareJobs = jobs.filter(isPendingVcare);
+
+  // สร้างไฟล์ Excel แบบแยกชีตตามประเภทบริการ ตรงกับที่สคริปต์กรอก V-Care อ่าน
+  // ตั้งชื่อ VCARE_Import_Template.xlsx เพื่อวางทับไฟล์เดิมในโฟลเดอร์โปรแกรมกรอกอัตโนมัติได้ทันที
+  const writeVcareFile = (list: any[]) => {
+    const sheets = buildVcareSheets(list, { centerName: vcareCenter || centerName });
+    const wb = XLSX.utils.book_new();
+    sheets.forEach(s => {
+      const ws = XLSX.utils.aoa_to_sheet([s.headers, ...s.rows]);
+      ws['!cols'] = s.widths.map(w => ({ wch: w }));
+      XLSX.utils.book_append_sheet(wb, ws, s.name);
+    });
+    XLSX.writeFile(wb, 'VCARE_Import_Template.xlsx');
+    return sheets;
   };
 
-  const getVcareStatus = (status: string): string => {
-    if (status === 'FIXED' || status === 'RETURNED_FIXED' || status === 'RETURNED') {
-      return 'เสร็จสิ้น (Completed)';
-    }
-    if (status === 'UNREPAIRABLE' || status === 'RETURNED_UNREPAIRABLE') {
-      return 'ส่งต่อ (Referred)';
-    }
-    return 'กำลังดำเนินการ (In Progress)';
+  const markVcare = async (jobIds: string[], exported: boolean) => {
+    const res = await fetch('/api/vcare/mark', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobIds, exported })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    await fetchJobs();
+    return data.count as number;
   };
 
-  const exportVcareExcel = async () => {
+  const exportVcarePending = async () => {
     try {
-      const exportJobs = filteredJobsByDate.filter(j => j.status !== 'CANCELLED');
-      if (exportJobs.length === 0) {
-        alert('ไม่พบข้อมูลงานสำหรับ Export (หรือข้อมูลถูกยกเลิกทั้งหมด)');
+      if (pendingVcareJobs.length === 0) {
+        alert('ไม่มีงานที่รอส่ง V-Care\n(ส่งออกเฉพาะงานที่ช่างสรุปผลแล้ว และยังไม่เคยส่งออก)');
         return;
       }
-
-      const dataRows = exportJobs.map((job, idx) => {
-        const catName = job.category?.name || 'เครื่องใช้ไฟฟ้า';
-        const serviceType = getVcareServiceType(catName, job.itemDetail || '');
-        const vcareStatus = getVcareStatus(job.status);
-        
-        let notes = `รหัสงาน: ${job.jobId}`;
-        if (job.repairerName) {
-          notes += ` | ช่าง: ${job.repairerName.trim()}`;
-        }
-        if (job.status === 'UNREPAIRABLE' || job.status === 'RETURNED_UNREPAIRABLE') {
-          notes += ` (ซ่อมไม่ได้)`;
-        }
-
-        return [
-          idx + 1,
-          centerName || 'ศูนย์บริการทั่วไป',
-          serviceType,
-          job.customer?.name || 'ประชาชนทั่วไป',
-          job.customer?.phone || '',
-          job.customer?.address || '',
-          catName,
-          job.itemDetail || '-',
-          job.symptoms || '-',
-          job.repairNotes || '',
-          0,
-          vcareStatus,
-          notes
-        ];
-      });
-
-      let wb: XLSX.WorkBook;
-      try {
-        const res = await fetch('/VCARE_Import_Template.xlsx');
-        if (res.ok) {
-          const arrayBuf = await res.arrayBuffer();
-          wb = XLSX.read(arrayBuf, { type: 'array' });
-          const sheetName = wb.SheetNames.includes('ข้อมูลบันทึกบริการ V-Care') 
-            ? 'ข้อมูลบันทึกบริการ V-Care' 
-            : wb.SheetNames[0];
-          const ws = wb.Sheets[sheetName];
-          
-          Object.keys(ws).forEach(key => {
-            if (key.startsWith('!')) return;
-            const r = parseInt(key.replace(/^[A-Z]+/, ''), 10);
-            if (r >= 2) delete ws[key];
-          });
-
-          XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: 'A2' });
-          ws['!ref'] = XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: 12, r: dataRows.length } });
-        } else {
-          throw new Error('Template fetch failed');
-        }
-      } catch (err) {
-        wb = XLSX.utils.book_new();
-        const headers = [
-          'ลำดับ', 'จุดบริการ / ศูนย์อาชีวะอาสา', 'เลือกประเภทบริการ *',
-          'ชื่อ-นามสกุล ผู้รับบริการ *', 'เบอร์โทรศัพท์ติดต่อ', 'ที่อยู่ / พื้นที่ประสบภัย',
-          'ชนิดเครื่องใช้ไฟฟ้า / สิ่งของ *', 'ยี่ห้อ / รุ่น', 'อาการเสีย / สาเหตุ *',
-          'อะไหล่ที่เปลี่ยน', 'ค่าใช้จ่าย (บาท)', 'สถานะงาน *', 'หมายเหตุเพิ่มเติม'
-        ];
-        const wsMain = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
-        wsMain['!cols'] = [
-          { wch: 8 }, { wch: 25 }, { wch: 35 }, { wch: 25 }, { wch: 15 },
-          { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 30 }, { wch: 20 },
-          { wch: 15 }, { wch: 25 }, { wch: 30 }
-        ];
-
-        const lookupData = [
-          ['ประเภทบริการ', 'สถานะงาน'],
-          ['1. โรงครัวอาชีวะ', 'เสร็จสิ้น (Completed)'],
-          ['2. ศูนย์พักพิง', 'กำลังดำเนินการ (In Progress)'],
-          ['3. ตรวจเช็กและซ่อมเครื่องใช้ไฟฟ้า', 'รออะไหล่ (Pending Spare Parts)'],
-          ['4. ตรวจเช็กและซ่อมรถจักรยานยนต์', 'ส่งต่อ (Referred)'],
-          ['5. ตรวจเช็กรถยนต์', null],
-          ['6. ตรวจเช็กและซ่อมเครื่องมือประกอบอาชีพ', null],
-          ['7. ตรวจเช็กระบบไฟฟ้าเบื้องต้น', null],
-          ['8. อื่น ๆ (ช่วยเหลือผู้ประสบภัยอื่น ๆ)', null],
-          ['9. ให้คำแนะนำประชาชน (ให้คำปรึกษาและข้อมูลข่าวสาร)', null]
-        ];
-        const wsLookup = XLSX.utils.aoa_to_sheet(lookupData);
-
-        XLSX.utils.book_append_sheet(wb, wsMain, 'ข้อมูลบันทึกบริการ V-Care');
-        XLSX.utils.book_append_sheet(wb, wsLookup, 'Lookup_Data');
+      const sheets = writeVcareFile(pendingVcareJobs);
+      const summary = sheets.map(s => `  - ${s.name}: ${s.rows.length} รายการ`).join('\n');
+      const ok = confirm(
+        `ดาวน์โหลดไฟล์ VCARE_Import_Template.xlsx แล้ว (${pendingVcareJobs.length} รายการ)\n${summary}\n\n` +
+        `กด OK เพื่อทำเครื่องหมายว่า "ส่งออก V-Care แล้ว" ครั้งต่อไปจะไม่ส่งออกซ้ำ\n` +
+        `กด Cancel ถ้ายังไม่แน่ใจ (รายการจะยังอยู่ในกลุ่มรอส่ง)`
+      );
+      if (ok) {
+        const count = await markVcare(pendingVcareJobs.map(j => j.jobId), true);
+        alert(`ทำเครื่องหมายส่งออกแล้ว ${count} รายการ\nนำไฟล์ไปวางในโฟลเดอร์โปรแกรมกรอก V-Care แล้วรัน Run_AutoFill_VCARE.bat`);
       }
-
-      const fileName = `VCARE_Import_${filterDate === 'ALL' ? 'ALL' : filterDate}.xlsx`;
-      XLSX.writeFile(wb, fileName);
     } catch (e: any) {
       console.error('Error exporting VCARE Excel:', e);
       alert('เกิดข้อผิดพลาดในการสร้างไฟล์ V-Care: ' + (e.message || e));
     }
+  };
+
+  // ส่งออกซ้ำ: งานที่ปิดแล้วตามวันที่ที่เลือก (รวมที่เคยส่งออก) ไม่เปลี่ยนเครื่องหมาย
+  const exportVcareByDate = () => {
+    const list = filteredJobsByDate.filter(j => isClosedJob(j.status));
+    if (list.length === 0) {
+      alert('ไม่มีงานที่ปิดแล้วในวันที่ที่เลือก');
+      return;
+    }
+    if (!confirm(`ส่งออกซ้ำ ${list.length} รายการ (${filterDate === 'ALL' ? 'ทุกวัน' : filterDate}) รวมรายการที่เคยส่งแล้ว\nระวังข้อมูลซ้ำใน V-Care ยืนยันหรือไม่?`)) return;
+    writeVcareFile(list);
   };
 
   return (
@@ -348,9 +279,13 @@ export default function ReportPanel() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 Excel สำหรับแก้ไข
               </button>
-              <button onClick={exportVcareExcel} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center gap-1 shadow-sm font-medium">
+              <button onClick={exportVcarePending} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center gap-1 shadow-sm font-medium" title="ส่งออกงานที่ปิดแล้วและยังไม่เคยส่ง V-Care">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                Excel V-Care (สำหรับ Import)
+                Excel V-Care: รอส่ง
+                <span className={`ml-1 px-1.5 rounded-full text-xs font-bold ${pendingVcareJobs.length > 0 ? 'bg-yellow-300 text-yellow-900' : 'bg-blue-400 text-white'}`}>{pendingVcareJobs.length}</span>
+              </button>
+              <button onClick={exportVcareByDate} className="text-blue-700 hover:text-blue-900 underline px-1 py-1 text-xs" title="ส่งออกงานที่ปิดแล้วตามวันที่ที่เลือก รวมที่เคยส่งแล้ว">
+                ส่งออกซ้ำ
               </button>
             </div>
           </div>
@@ -535,6 +470,32 @@ export default function ReportPanel() {
                   <div><span className="font-semibold">ชนิดสิ่งของ:</span> {selectedJob.category?.name}</div>
                   <div><span className="font-semibold">รายละเอียดสิ่งของ:</span> {selectedJob.itemDetail || '-'}</div>
                   <div><span className="font-semibold">อาการเสีย:</span> <span className="text-red-600 font-medium">{selectedJob.symptoms}</span></div>
+                  <div><span className="font-semibold">ประเภทบริการ (V-Care):</span> {(getServiceType(selectedJob.serviceType) || getServiceType(guessServiceType(selectedJob.category?.name || '', selectedJob.itemDetail || '')))?.label}</div>
+                  {selectedJob.brandModel && <div><span className="font-semibold">ยี่ห้อ / รุ่น:</span> {selectedJob.brandModel}</div>}
+                  {selectedJob.licensePlate && <div><span className="font-semibold">ทะเบียนรถ:</span> {selectedJob.licensePlate}</div>}
+                  {(selectedJob.partsUsed || selectedJob.partsCost != null) && (
+                    <div><span className="font-semibold">อะไหล่ที่เปลี่ยน:</span> {selectedJob.partsUsed || '-'} <span className="text-gray-600">(ค่าใช้จ่าย {selectedJob.partsCost ?? 0} บาท)</span></div>
+                  )}
+                  <div className="print:hidden flex items-center gap-2 text-sm">
+                    <span className="font-semibold">ส่งออก V-Care:</span>
+                    {selectedJob.vcareExportedAt ? (
+                      <>
+                        <span className="text-green-700">ส่งออกแล้ว {new Date(selectedJob.vcareExportedAt).toLocaleDateString('th-TH')}</span>
+                        <button
+                          onClick={async () => {
+                            if (!confirm('ยกเลิกเครื่องหมาย "ส่งออกแล้ว" ของงานนี้? งานจะกลับไปอยู่ในกลุ่มรอส่ง V-Care')) return;
+                            try {
+                              await markVcare([selectedJob.jobId], false);
+                              setSelectedJob({ ...selectedJob, vcareExportedAt: null });
+                            } catch (e: any) { alert('ไม่สำเร็จ: ' + e.message); }
+                          }}
+                          className="text-xs text-blue-700 underline"
+                        >ยกเลิกเครื่องหมาย</button>
+                      </>
+                    ) : (
+                      <span className="text-gray-500">{isClosedJob(selectedJob.status) ? 'รอส่ง' : 'ยังไม่ส่ง (รอช่างสรุปผล)'}</span>
+                    )}
+                  </div>
                   {selectedJob.repairNotes && (
                     <div className="mt-2 pt-2 border-t border-gray-200">
                       <span className="font-semibold">ผลการตรวจสอบ/ซ่อมแซม:</span> <span className="text-blue-700">{selectedJob.repairNotes}</span>
