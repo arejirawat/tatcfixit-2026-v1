@@ -39,6 +39,14 @@ export default function Dashboard() {
   const [brandModel, setBrandModel] = useState('');
   const [licensePlate, setLicensePlate] = useState('');
   const effectiveServiceType = serviceTypeChoice || guessServiceType(productType, productDetail);
+  // ข้อความบนเอกสารที่พิมพ์ (คูปอง / ใบแนบสินค้า / ใบงาน A4)
+  const itemText = [productType, brandModel, productDetail].filter(Boolean).join(' ');
+  const plateText = isVehicle(effectiveServiceType) ? licensePlate.trim() : '';
+  // ช่องติ๊ก "ประเภทเครื่องใช้ที่ซ่อม" บนใบงาน A4 ตามประเภทบริการ V-Care
+  const formCategory = isVehicle(effectiveServiceType) ? 'vehicle'
+    : effectiveServiceType === 'TOOL' ? 'tool'
+    : effectiveServiceType === 'HOME_ELEC' ? 'other'
+    : 'appliance';
   // ล็อกทันทีที่กด (state อัปเดตไม่ทันเมื่อกดรัวๆ) ป้องกันการบันทึกใบงานซ้ำ
   const savingLock = useRef(false);
 
@@ -770,7 +778,8 @@ export default function Dashboard() {
                       <div><span className="font-bold">รหัสคิวงาน:</span> {customerData?.jobId || 'กำลังออกรหัส...'}</div>
                       <div><span className="font-bold">ชื่อลูกค้า:</span> {customerData?.firstName} {customerData?.lastName}</div>
                       <div><span className="font-bold">วันที่ส่งซ่อม:</span> {(customerData?.createdAt ? new Date(customerData.createdAt) : new Date()).toLocaleDateString('th-TH')}</div>
-                      <div><span className="font-bold">สินค้าที่ซ่อม:</span> {[productType, brandModel, productDetail].filter(Boolean).join(' ')}</div>
+                      <div><span className="font-bold">สินค้าที่ซ่อม:</span> {itemText}</div>
+                      {plateText && <div><span className="font-bold">ทะเบียนรถ:</span> <span className="text-sm font-bold">{plateText}</span></div>}
                     </div>
                     <div className="mt-4 pt-4 border-t border-gray-400 print:border-black text-center text-[10px] text-black">
                       <p>กรุณานำคูปองนี้มาด้วยเมื่อมารับเครื่อง</p>
@@ -792,6 +801,16 @@ export default function Dashboard() {
                       <span className="font-bold whitespace-nowrap">โทรศัพท์</span>
                       <span className="flex-1 border-b border-dotted border-black ml-1 pl-1 truncate">{phone || ''}</span>
                     </div>
+                    <div className="flex mb-1 text-[10px]">
+                      <span className="font-bold whitespace-nowrap">สินค้า</span>
+                      <span className="flex-1 border-b border-dotted border-black ml-1 pl-1 truncate">{itemText}</span>
+                    </div>
+                    {plateText && (
+                      <div className="flex mb-1 text-[10px]">
+                        <span className="font-bold whitespace-nowrap">ทะเบียนรถ</span>
+                        <span className="flex-1 border-b border-dotted border-black ml-1 pl-1 truncate text-xs font-bold">{plateText}</span>
+                      </div>
+                    )}
                     <div className="flex mb-3 text-[10px]">
                       <span className="font-bold whitespace-nowrap">อาการเสีย</span>
                       <span className="flex-1 border-b border-dotted border-black ml-1 pl-1 truncate">{symptoms}</span>
@@ -894,18 +913,18 @@ export default function Dashboard() {
                           </div>
                           <div className="flex">
                             <span>สิ่งของที่นำมาซ่อม</span>
-                            <span className="flex-1 border-b border-dotted border-black ml-2 pl-2 text-blue-700">{[brandModel, productDetail, licensePlate && `ทะเบียน ${licensePlate}`].filter(Boolean).join(' ')}</span>
+                            <span className="flex-1 border-b border-dotted border-black ml-2 pl-2 text-blue-700">{[itemText, plateText && `ทะเบียน ${plateText}`].filter(Boolean).join(' ')}</span>
                           </div>
                           <div>
                             <div>ประเภทเครื่องใช้ที่ซ่อม</div>
                             <div className="grid grid-cols-2 gap-2 mt-2 ml-4">
-                              <label className="flex items-center gap-2"><input type="checkbox" className="w-4 h-4 print:appearance-none print:w-4 print:h-4 print:border print:border-black print:checked:bg-black" defaultChecked={productType === 'เครื่องมือการเกษตร'} /> เครื่องมือ/เครื่องจักรกลการเกษตร</label>
-                              <label className="flex items-center gap-2"><input type="checkbox" className="w-4 h-4 print:appearance-none print:w-4 print:h-4 print:border print:border-black print:checked:bg-black" defaultChecked={['พัดลม', 'เตารีด', 'เครื่องใช้ไฟฟ้า'].includes(productType)} /> เครื่องใช้ไฟฟ้า/เครื่องใช้ในครัวเรือน</label>
-                              <label className="flex items-center gap-2"><input type="checkbox" className="w-4 h-4 print:appearance-none print:w-4 print:h-4 print:border print:border-black print:checked:bg-black" defaultChecked={productType === 'ยานพาหนะ'} /> ยานพาหนะ</label>
+                              <label className="flex items-center gap-2"><input type="checkbox" className="w-4 h-4 print:appearance-none print:w-4 print:h-4 print:border print:border-black print:checked:bg-black" defaultChecked={formCategory === 'tool'} /> เครื่องมือ/เครื่องจักรกลการเกษตร</label>
+                              <label className="flex items-center gap-2"><input type="checkbox" className="w-4 h-4 print:appearance-none print:w-4 print:h-4 print:border print:border-black print:checked:bg-black" defaultChecked={formCategory === 'appliance'} /> เครื่องใช้ไฟฟ้า/เครื่องใช้ในครัวเรือน</label>
+                              <label className="flex items-center gap-2"><input type="checkbox" className="w-4 h-4 print:appearance-none print:w-4 print:h-4 print:border print:border-black print:checked:bg-black" defaultChecked={formCategory === 'vehicle'} /> ยานพาหนะ</label>
                               <div className="flex items-center gap-2">
-                                <input type="checkbox" className="w-4 h-4 print:appearance-none print:w-4 print:h-4 print:border print:border-black print:checked:bg-black" defaultChecked={!['เครื่องมือการเกษตร', 'พัดลม', 'เตารีด', 'ยานพาหนะ', 'เครื่องใช้ไฟฟ้า'].includes(productType) && productType !== ''} /> 
+                                <input type="checkbox" className="w-4 h-4 print:appearance-none print:w-4 print:h-4 print:border print:border-black print:checked:bg-black" defaultChecked={formCategory === 'other'} />
                                 <span>อื่น ๆ (โปรดระบุ)</span>
-                                <span className="flex-1 border-b border-dotted border-black truncate px-2 text-blue-700">{!['เครื่องมือการเกษตร', 'พัดลม', 'เตารีด', 'ยานพาหนะ', 'เครื่องใช้ไฟฟ้า'].includes(productType) ? productType : ''}</span>
+                                <span className="flex-1 border-b border-dotted border-black truncate px-2 text-blue-700">{formCategory === 'other' ? productType : ''}</span>
                               </div>
                             </div>
                           </div>
