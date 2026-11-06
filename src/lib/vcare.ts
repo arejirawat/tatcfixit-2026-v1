@@ -33,7 +33,17 @@ export type VcareServiceType = {
 };
 
 const detail = (j: VcareJob) => (j.brandModel || j.itemDetail || '').trim();
-const workDone = (j: VcareJob) => (j.repairNotes || j.symptoms || '').trim();
+
+// V-Care ไม่มีสถานะ "ซ่อมไม่ได้" (ส่งเป็น เสร็จสิ้น) จึงระบุไว้ในช่องข้อความแทน
+export const isUnrepairable = (j: VcareJob) => j.status === 'UNREPAIRABLE' || j.status === 'RETURNED_UNREPAIRABLE';
+const unrepairableNote = (j: VcareJob) =>
+  isUnrepairable(j) ? `(ซ่อมไม่ได้${j.repairNotes ? `: ${j.repairNotes.trim()}` : ''})` : '';
+// อาการเสีย + หมายเหตุซ่อมไม่ได้ (ช่องอาการของเครื่องใช้ไฟฟ้า / เครื่องมือ)
+const symptomText = (j: VcareJob) => [(j.symptoms || '').trim(), unrepairableNote(j)].filter(Boolean).join(' ');
+// สิ่งที่ทำ (ช่องรายการบริการซ่อมของงานรถ)
+const workDone = (j: VcareJob) => isUnrepairable(j)
+  ? [`ซ่อมไม่ได้${j.repairNotes ? `: ${j.repairNotes.trim()}` : ''}`, j.symptoms && `อาการ: ${j.symptoms.trim()}`].filter(Boolean).join(' / ')
+  : (j.repairNotes || j.symptoms || '').trim();
 
 export const VCARE_SERVICE_TYPES: VcareServiceType[] = [
   {
@@ -41,7 +51,7 @@ export const VCARE_SERVICE_TYPES: VcareServiceType[] = [
     fields: [
       { header: 'ชนิดเครื่องใช้ไฟฟ้า', width: 24, value: j => j.category?.name || 'เครื่องใช้ไฟฟ้า' },
       { header: 'ยี่ห้อ / รุ่น', width: 24, value: detail },
-      { header: 'อาการเสีย / สาเหตุ', width: 30, value: j => j.symptoms || '' },
+      { header: 'อาการเสีย / สาเหตุ', width: 30, value: symptomText },
       { header: 'อะไหล่ที่เปลี่ยน', width: 24, value: j => j.partsUsed || '' },
       { header: 'ค่าใช้จ่าย (บาท)', width: 14, value: j => j.partsCost ?? 0 },
     ],
@@ -66,7 +76,7 @@ export const VCARE_SERVICE_TYPES: VcareServiceType[] = [
     code: 'TOOL', label: '6. ตรวจเช็กและซ่อมเครื่องมือประกอบอาชีพ', short: 'เครื่องมือประกอบอาชีพ', sheet: '6.เครื่องมือประกอบอาชีพ',
     fields: [
       { header: 'ชนิดเครื่องมือประกอบอาชีพ', width: 26, value: j => [j.category?.name, detail(j)].filter(Boolean).join(' ') },
-      { header: 'อาการเสีย', width: 30, value: j => j.symptoms || '' },
+      { header: 'อาการเสีย', width: 30, value: symptomText },
     ],
   },
   {

@@ -14,6 +14,9 @@ export default function ReportPanel() {
   // Filters
   const [filterDate, setFilterDate] = useState<string>('ALL');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  // ตัวกรองสถานะการส่ง V-Care (เฉพาะตารางรายการงาน) และงานที่เลือกไว้สำหรับส่งออกซ้ำ
+  const [vcareFilter, setVcareFilter] = useState<'ALL' | 'PENDING' | 'SENT' | 'NOT_READY'>('ALL');
+  const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
   const [centerName, setCenterName] = useState('ศูนย์ Fix IT Center');
   const [vcareCenter, setVcareCenter] = useState('');
 
@@ -254,15 +257,49 @@ export default function ReportPanel() {
     }
   };
 
-  // ส่งออกซ้ำ: งานที่ปิดแล้วตามวันที่ที่เลือก (รวมที่เคยส่งออก) ไม่เปลี่ยนเครื่องหมาย
-  const exportVcareByDate = () => {
-    const list = filteredJobsByDate.filter(j => isClosedJob(j.status));
-    if (list.length === 0) {
-      alert('ไม่มีงานที่ปิดแล้วในวันที่ที่เลือก');
-      return;
+  // สถานะการส่ง V-Care ของแต่ละงาน
+  const vcareState = (j: any): 'SENT' | 'PENDING' | 'NOT_READY' =>
+    j.vcareExportedAt ? 'SENT' : isClosedJob(j.status) ? 'PENDING' : 'NOT_READY';
+
+  // ตารางรายการงาน = ตัวกรองวันที่ + สถานะงาน + สถานะ V-Care
+  const tableJobs = displayedJobs.filter(j => vcareFilter === 'ALL' || vcareState(j) === vcareFilter);
+  // เลือกส่งออกได้เฉพาะงานที่ช่างสรุปผลแล้ว (ยกเลิก/ยังซ่อมไม่เสร็จ ส่งเข้า V-Care ไม่ได้)
+  const selectableIds = tableJobs.filter(j => isClosedJob(j.status)).map(j => j.jobId);
+  const selectedJobs = jobs.filter(j => selectedJobIds.includes(j.jobId) && isClosedJob(j.status));
+  const allShownSelected = selectableIds.length > 0 && selectableIds.every(id => selectedJobIds.includes(id));
+
+  const toggleSelect = (jobId: string) =>
+    setSelectedJobIds(prev => prev.includes(jobId) ? prev.filter(id => id !== jobId) : [...prev, jobId]);
+  const toggleSelectAllShown = () =>
+    setSelectedJobIds(prev => allShownSelected
+      ? prev.filter(id => !selectableIds.includes(id))
+      : [...new Set([...prev, ...selectableIds])]);
+
+  // ส่งออกงานที่เลือก (ใช้ส่งออกซ้ำ หรือเลือกส่งบางรายการ)
+  const exportVcareSelected = async () => {
+    try {
+      if (selectedJobs.length === 0) {
+        alert('กรุณาติ๊กเลือกงานในตาราง "รายการงานซ่อม" ก่อน\n(ใช้ตัวกรอง "สถานะ V-Care" ช่วยหางานที่ส่งแล้ว/ยังไม่ส่ง)');
+        return;
+      }
+      const sentBefore = selectedJobs.filter(j => j.vcareExportedAt).length;
+      if (sentBefore > 0 && !confirm(
+        `ในงานที่เลือก ${selectedJobs.length} รายการ มี ${sentBefore} รายการที่เคยส่งออกแล้ว\n` +
+        `ถ้าเคยกรอกเข้า V-Care สำเร็จแล้ว การส่งซ้ำจะทำให้ข้อมูลซ้ำในระบบ V-Care\n\nยืนยันส่งออกหรือไม่?`
+      )) return;
+      writeVcareFile(selectedJobs);
+      const notMarked = selectedJobs.filter(j => !j.vcareExportedAt);
+      if (notMarked.length > 0 && confirm(
+        `ดาวน์โหลดไฟล์ VCARE_Import_Template.xlsx แล้ว (${selectedJobs.length} รายการ)\n\n` +
+        `กด OK เพื่อทำเครื่องหมาย "ส่งออก V-Care แล้ว" ให้ ${notMarked.length} รายการที่ยังไม่มีเครื่องหมาย`
+      )) {
+        await markVcare(notMarked.map(j => j.jobId), true);
+      }
+      setSelectedJobIds([]);
+    } catch (e: any) {
+      console.error('Error exporting VCARE Excel:', e);
+      alert('เกิดข้อผิดพลาดในการสร้างไฟล์ V-Care: ' + (e.message || e));
     }
-    if (!confirm(`ส่งออกซ้ำ ${list.length} รายการ (${filterDate === 'ALL' ? 'ทุกวัน' : filterDate}) รวมรายการที่เคยส่งแล้ว\nระวังข้อมูลซ้ำใน V-Care ยืนยันหรือไม่?`)) return;
-    writeVcareFile(list);
   };
 
   return (
@@ -284,8 +321,8 @@ export default function ReportPanel() {
                 Excel V-Care: รอส่ง
                 <span className={`ml-1 px-1.5 rounded-full text-xs font-bold ${pendingVcareJobs.length > 0 ? 'bg-yellow-300 text-yellow-900' : 'bg-blue-400 text-white'}`}>{pendingVcareJobs.length}</span>
               </button>
-              <button onClick={exportVcareByDate} className="text-blue-700 hover:text-blue-900 underline px-1 py-1 text-xs" title="ส่งออกงานที่ปิดแล้วตามวันที่ที่เลือก รวมที่เคยส่งแล้ว">
-                ส่งออกซ้ำ
+              <button onClick={exportVcareSelected} className="bg-white border border-blue-600 text-blue-700 hover:bg-blue-50 px-3 py-1 rounded text-sm shadow-sm" title="ส่งออกเฉพาะงานที่ติ๊กเลือกในตารางรายการงานซ่อม">
+                ส่งออกที่เลือก ({selectedJobs.length})
               </button>
             </div>
           </div>
@@ -387,28 +424,69 @@ export default function ReportPanel() {
         {/* Recent Jobs Table */}
         <div className="md:col-span-2 bg-gray-50 p-4 rounded border">
           <h3 className="font-bold text-sm mb-4 border-b pb-2 flex justify-between items-center text-gray-700">
-            รายการงานซ่อม 
+            รายการงานซ่อม
             <span className="text-xs font-normal text-gray-500">
-              พบ {displayedJobs.length} รายการ (คลิกเพื่อดูใบงาน)
+              พบ {tableJobs.length} รายการ (คลิกเพื่อดูใบงาน)
             </span>
           </h3>
+          <div className="flex flex-wrap items-center gap-2 mb-3 text-xs">
+            <span className="font-semibold text-gray-700">สถานะ V-Care:</span>
+            {([
+              ['ALL', 'ทั้งหมด'],
+              ['PENDING', 'รอส่ง'],
+              ['SENT', 'ส่งแล้ว'],
+              ['NOT_READY', 'ยังไม่พร้อมส่ง'],
+            ] as const).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setVcareFilter(key)}
+                className={`px-2 py-1 rounded border ${vcareFilter === key ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+              >
+                {label} ({key === 'ALL' ? displayedJobs.length : displayedJobs.filter(j => vcareState(j) === key).length})
+              </button>
+            ))}
+            {selectedJobIds.length > 0 && (
+              <button onClick={() => setSelectedJobIds([])} className="ml-auto text-gray-500 underline">
+                ล้างที่เลือก ({selectedJobs.length})
+              </button>
+            )}
+          </div>
           <div className="overflow-x-auto max-h-96 overflow-y-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-gray-200 sticky top-0 shadow-sm">
                 <tr>
+                  <th className="p-2 border w-8 text-center">
+                    <input
+                      type="checkbox"
+                      checked={allShownSelected}
+                      disabled={selectableIds.length === 0}
+                      onChange={toggleSelectAllShown}
+                      title="เลือกทั้งหมดที่แสดง (เฉพาะงานที่ช่างสรุปผลแล้ว)"
+                    />
+                  </th>
                   <th className="p-2 border">รหัสงาน</th>
                   <th className="p-2 border">ลูกค้า</th>
                   <th className="p-2 border">สิ่งของ</th>
                   <th className="p-2 border">สถานะ</th>
+                  <th className="p-2 border">V-Care</th>
                 </tr>
               </thead>
               <tbody>
-                {displayedJobs.map(job => (
-                  <tr 
-                    key={job.id} 
+                {tableJobs.map(job => (
+                  <tr
+                    key={job.id}
                     onClick={() => setSelectedJob(job)}
-                    className="border-b bg-white hover:bg-blue-50 transition-colors cursor-pointer"
+                    className={`border-b hover:bg-blue-50 transition-colors cursor-pointer ${selectedJobIds.includes(job.jobId) ? 'bg-blue-50' : 'bg-white'}`}
                   >
+                    <td className="p-2 border text-center" onClick={e => e.stopPropagation()}>
+                      {isClosedJob(job.status) && (
+                        <input
+                          type="checkbox"
+                          checked={selectedJobIds.includes(job.jobId)}
+                          onChange={() => toggleSelect(job.jobId)}
+                        />
+                      )}
+                    </td>
                     <td className="p-2 border font-mono text-blue-700">{job.jobId}</td>
                     <td className="p-2 border truncate max-w-[100px]">{job.customer?.name}</td>
                     <td className="p-2 border truncate max-w-[100px]">{job.category?.name}</td>
@@ -417,11 +495,16 @@ export default function ReportPanel() {
                         {getStatusText(job.status)}
                       </span>
                     </td>
+                    <td className="p-2 border whitespace-nowrap text-[10px] font-bold">
+                      {vcareState(job) === 'SENT' && <span className="px-2 py-1 rounded bg-green-100 text-green-800" title={`ส่งออกเมื่อ ${new Date(job.vcareExportedAt).toLocaleDateString('th-TH')}`}>ส่งแล้ว</span>}
+                      {vcareState(job) === 'PENDING' && <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-800">รอส่ง</span>}
+                      {vcareState(job) === 'NOT_READY' && <span className="px-2 py-1 rounded bg-gray-100 text-gray-500">-</span>}
+                    </td>
                   </tr>
                 ))}
-                {displayedJobs.length === 0 && (
+                {tableJobs.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="p-4 text-center text-gray-500 bg-white">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td>
+                    <td colSpan={6} className="p-4 text-center text-gray-500 bg-white">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td>
                   </tr>
                 )}
               </tbody>
