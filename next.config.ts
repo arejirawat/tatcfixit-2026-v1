@@ -31,6 +31,12 @@ const getLanIps = () => {
   return ips;
 };
 
+// อนุญาตทุก IP ในวง LAN (private network) ด้วย ไม่ใช่แค่ IP ที่เครื่องมีตอนเปิดโปรแกรม
+// เพราะถ้าเปิด Start_FixIT.bat ก่อน WiFi ต่อเสร็จ หรือ router แจก IP ใหม่ภายหลัง
+// Next.js 16 จะบล็อกมือถือที่เข้าด้วย IP ใหม่ (หน้าขึ้นแต่กดอะไรไม่ได้)
+// รูปแบบ * = ตัวเลข 1 ช่องของ IP (ตรวจกับ Next.js 16.4.5 แล้ว: ไม่อนุญาตที่อยู่ภายนอก เช่น 8.8.8.8)
+const LAN_IP_PATTERNS = ['192.168.*.*', '10.*.*.*', '172.*.*.*', '169.254.*.*'];
+
 const nextConfig: NextConfig = {
   /* config options here */
   env: {
@@ -38,7 +44,7 @@ const nextConfig: NextConfig = {
     APP_COMMIT: gitCommit ? `${gitCommit}${gitDirty}` : "",
     APP_COMMIT_DATE: gitDate,
   },
-  allowedDevOrigins: getLanIps(),
+  allowedDevOrigins: [...getLanIps(), ...LAN_IP_PATTERNS],
   devIndicators: false,
   cacheComponents: true,
   partialPrefetching: true,
