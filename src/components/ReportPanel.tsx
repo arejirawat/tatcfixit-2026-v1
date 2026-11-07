@@ -70,7 +70,8 @@ export default function ReportPanel() {
   });
 
   // Calculate statistics based on Date Filter
-  const totalJobs = filteredJobsByDate.length;
+  // งานทั้งหมด = ไม่นับงานที่ยกเลิก (ให้ตรงกับผลรวม ซ่อมสำเร็จ + ซ่อมไม่ได้ + กำลังดำเนินการ)
+  const totalJobs = filteredJobsByDate.filter(job => job.status !== 'CANCELLED').length;
   const statusCount = filteredJobsByDate.reduce((acc, job) => {
       if (job.status === 'CANCELLED') return acc;
     acc[job.status] = (acc[job.status] || 0) + 1;
@@ -96,6 +97,8 @@ export default function ReportPanel() {
   const sortedCategories = (Object.entries(categoryCount) as [string, number][]).sort((a, b) => b[1] - a[1]);
 
   const customerCount = displayedJobs.reduce((acc, job) => {
+    // ไม่นับงานที่ยกเลิก (ลูกค้าที่มีแต่งานยกเลิกจะไม่ถูกนับเป็นผู้ใช้บริการ)
+    if (job.status === 'CANCELLED') return acc;
     if (job.customer) {
       // Use name and last 4 digits of citizen ID for privacy/display
       const citId = job.customer.citizenId || '0000000000000';
