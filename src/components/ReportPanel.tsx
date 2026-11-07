@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import { toPng } from 'html-to-image';
+import { toJpeg } from 'html-to-image';
+import PdfSummaryPages, { PDF_PAGE_W, PDF_PAGE_H, type PdfSummaryData } from './PdfSummaryPages';
 import autoTable from 'jspdf-autotable';
 import { buildVcareSheets, getServiceType, guessServiceType, isClosedJob, isPendingVcare } from '@/lib/vcare';
 
@@ -17,6 +18,7 @@ export default function ReportPanel() {
   // ตัวกรองสถานะการส่ง V-Care (เฉพาะตารางรายการงาน) และงานที่เลือกไว้สำหรับส่งออกซ้ำ
   const [vcareFilter, setVcareFilter] = useState<'ALL' | 'PENDING' | 'SENT' | 'NOT_READY'>('ALL');
   const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [centerName, setCenterName] = useState('ศูนย์ Fix IT Center');
   const [vcareCenter, setVcareCenter] = useState('');
 
@@ -147,26 +149,61 @@ export default function ReportPanel() {
   };
 
   
+  // ข้อมูลรายงาน PDF: ตามตัวกรองวันที่ (ไม่ขึ้นกับการ์ดสถานะที่กดเลือกไว้) และไม่นับงานที่ยกเลิก
+  const pdfJobs = filteredJobsByDate.filter(j => j.status !== 'CANCELLED');
+  const pdfCount = (statuses: string[]) => pdfJobs.filter(j => statuses.includes(j.status)).length;
+  const pdfFixed = pdfCount(['FIXED', 'RETURNED_FIXED', 'RETURNED']);
+  const pdfUnrepairable = pdfCount(['UNREPAIRABLE', 'RETURNED_UNREPAIRABLE']);
+  const thaiDate = (d: string | Date) => new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+  const pdfDates = pdfJobs.map(j => new Date(j.createdAt).getTime());
+  const pdfData: PdfSummaryData = {
+    centerName,
+    periodLabel: filterDate !== 'ALL'
+      ? `ประจำวันที่ ${thaiDate(filterDate)}`
+      : pdfDates.length
+        ? `ข้อมูลทั้งหมด ${thaiDate(Math.min(...pdfDates) as any)} – ${thaiDate(Math.max(...pdfDates) as any)}`
+        : 'ข้อมูลทั้งหมด',
+    printedAt: new Date().toLocaleString('th-TH', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    version: `v${process.env.APP_VERSION}`,
+    total: pdfJobs.length,
+    fixed: pdfFixed,
+    unrepairable: pdfUnrepairable,
+    inProgress: pdfJobs.length - pdfFixed - pdfUnrepairable,
+    returned: pdfJobs.filter(j => j.status.startsWith('RETURNED')).length,
+    customers: new Set(pdfJobs.map(j => j.customerId)).size,
+    categories: (Object.entries(pdfJobs.reduce((acc, j) => {
+      const cat = j.category?.name || 'ไม่ระบุ';
+      acc[cat] = (acc[cat] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)) as [string, number][]).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'th')),
+  };
+
   const exportPDFSummary = async () => {
+    if (isExportingPdf) return;
+    setIsExportingPdf(true);
     try {
-      const element = document.getElementById('pdf-report-template');
-      if (!element) return;
-      
-      const imgData = await toPng(element, { 
-        pixelRatio: 2,
-        backgroundColor: '#ffffff'
-      });
-      
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const rect = element.getBoundingClientRect();
-      const pdfHeight = (rect.height * pdfWidth) / rect.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const pages = Array.from(document.querySelectorAll<HTMLElement>('#pdf-report-pages [data-pdf-page]'));
+      if (pages.length === 0) return;
+
+      // JPEG ทีละหน้า A4: ไฟล์เล็กกว่า PNG มาก และไม่มีส่วนที่ล้นหน้าแล้วถูกตัด
+      const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
+      for (let i = 0; i < pages.length; i++) {
+        const img = await toJpeg(pages[i], {
+          pixelRatio: 1.6,
+          quality: 0.82,
+          backgroundColor: '#ffffff',
+          width: PDF_PAGE_W,
+          height: PDF_PAGE_H,
+        });
+        if (i > 0) pdf.addPage();
+        pdf.addImage(img, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+      }
       pdf.save(`Summary_Report_${filterDate}.pdf`);
     } catch (e: any) {
       console.error('Error generating PDF:', e);
       alert('เกิดข้อผิดพลาดในการสร้าง PDF: ' + (e.message || e));
+    } finally {
+      setIsExportingPdf(false);
     }
   };
 
@@ -335,9 +372,9 @@ export default function ReportPanel() {
           <div>
             <h2 className="text-2xl font-bold text-gray-800">สรุปข้อมูลการซ่อม (Dashboard)</h2>
             <div className="flex gap-2 mt-2">
-              <button onClick={exportPDFSummary} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm flex items-center gap-1 shadow-sm">
+              <button onClick={exportPDFSummary} disabled={isExportingPdf} className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-3 py-1 rounded text-sm flex items-center gap-1 shadow-sm">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path></svg>
-                PDF สำหรับนำเสนอ
+                {isExportingPdf ? 'กำลังสร้าง PDF...' : 'PDF สำหรับนำเสนอ'}
               </button>
               <button onClick={exportExcelSummary} className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm flex items-center gap-1 shadow-sm">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -666,69 +703,9 @@ export default function ReportPanel() {
         }
       `}} />
 
-      {/* Hidden PDF Report Template */}
-      <div className="absolute left-[-9999px] top-[0] -z-50">
-        <div id="pdf-report-template" className="bg-white text-black w-[800px] p-8 font-sans">
-          {/* Header */}
-          <div className="bg-blue-800 text-white p-6 text-center rounded-t-xl mb-6 shadow-sm">
-            <h1 className="text-3xl font-bold mb-2">รายงานสรุปผลการปฏิบัติงาน</h1>
-            <h2 className="text-xl font-semibold opacity-90">{centerName}</h2>
-          </div>
-          
-          {/* Info Section */}
-          <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg flex justify-between items-center mb-6 text-sm">
-            <div><span className="font-bold text-blue-900">ประจำวันที่:</span> {filterDate === 'ALL' ? 'ทั้งหมด' : new Date(filterDate).toLocaleDateString('th-TH')}</div>
-            <div><span className="font-bold text-blue-900">พิมพ์เมื่อ:</span> {new Date().toLocaleString('th-TH')}</div>
-          </div>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-4 gap-4 mb-8">
-            <div className="bg-blue-100 border border-blue-200 p-4 rounded-xl text-center shadow-sm">
-              <div className="text-blue-800 font-bold mb-1">งานทั้งหมด</div>
-              <div className="text-4xl font-black text-blue-900">{totalJobs}</div>
-            </div>
-            <div className="bg-green-100 border border-green-200 p-4 rounded-xl text-center shadow-sm">
-              <div className="text-green-800 font-bold mb-1">ซ่อมสำเร็จ</div>
-              <div className="text-4xl font-black text-green-900">{(statusCount['FIXED'] || 0) + (statusCount['RETURNED_FIXED'] || 0)}</div>
-            </div>
-            <div className="bg-red-100 border border-red-200 p-4 rounded-xl text-center shadow-sm">
-              <div className="text-red-800 font-bold mb-1">ซ่อมไม่ได้</div>
-              <div className="text-4xl font-black text-red-900">{(statusCount['UNREPAIRABLE'] || 0) + (statusCount['RETURNED_UNREPAIRABLE'] || 0)}</div>
-            </div>
-            <div className="bg-yellow-100 border border-yellow-200 p-4 rounded-xl text-center shadow-sm">
-              <div className="text-yellow-800 font-bold mb-1">กำลังดำเนินการ</div>
-              <div className="text-4xl font-black text-yellow-900">{(statusCount['PENDING'] || 0) + (statusCount['REPAIRING'] || 0) + (statusCount['WAITING_RETURN'] || 0)}</div>
-            </div>
-          </div>
-
-          {/* Categories Table */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-            <h3 className="bg-gray-800 text-white p-3 px-4 font-bold text-lg">สรุปแยกตามชนิดงาน</h3>
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-100 border-b border-gray-200 text-gray-700">
-                  <th className="p-3 px-4 font-bold w-16 text-center">ลำดับ</th>
-                  <th className="p-3 px-4 font-bold">ชนิดงาน (หมวดหมู่)</th>
-                  <th className="p-3 px-4 font-bold text-center w-32">จำนวน (งาน)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {sortedCategories.map(([cat, count], idx) => (
-                  <tr key={cat} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="p-3 px-4 text-center text-gray-500">{idx + 1}</td>
-                    <td className="p-3 px-4 font-medium">{cat}</td>
-                    <td className="p-3 px-4 text-center font-bold text-blue-600">{count}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Footer */}
-          <div className="mt-12 text-center text-gray-400 text-sm border-t border-gray-100 pt-4">
-            เอกสารฉบับนี้สร้างโดยระบบ FixIT Center 2026 (ระบบจัดการศูนย์ซ่อมสร้างเพื่อชุมชน)
-          </div>
-        </div>
+      {/* หน้ารายงาน PDF (ซ่อนไว้นอกจอ ใช้ตอนกด "PDF สำหรับนำเสนอ") */}
+      <div id="pdf-report-pages" aria-hidden="true" style={{ position: "absolute", left: -10000, top: 0 }}>
+        <PdfSummaryPages data={pdfData} />
       </div>
 
     </div>
