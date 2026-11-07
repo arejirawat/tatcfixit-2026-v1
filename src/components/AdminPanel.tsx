@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { QRCodeSVG } from 'qrcode.react';
+import { getServiceType, guessServiceType } from '@/lib/vcare';
 
 export default function AdminPanel() {
   const [jobs, setJobs] = useState<any[]>([]);
@@ -194,19 +195,67 @@ export default function AdminPanel() {
     }
   };
 
+  // ส่งออกข้อมูลทั้งหมด: ชีต "งานซ่อม" (ทุกช่องของใบงาน รวมงานที่ยกเลิก) + ชีต "ลูกค้า"
   const exportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(jobs.map(j => ({
+    const dt = (d?: string | null) => d
+      ? new Date(d).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : '';
+    const citizen = (id?: string | null) => (!id || id.startsWith('NOID-') ? '-' : id);
+    // เรียงตามรหัสคิว (เก่า → ใหม่)
+    const sorted = [...jobs].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+    const jobRows = sorted.map((j, i) => ({
+      'ลำดับ': i + 1,
       'รหัสคิวงาน': j.jobId,
-      'ชื่อลูกค้า': j.customer?.name,
-      'เบอร์โทร': j.customer?.phone || '-',
-      'สิ่งของที่ซ่อม': `${j.category?.name || ''} ${j.itemDetail}`.trim(),
-      'อาการเสีย': j.symptoms,
+      'วันที่รับงาน': dt(j.createdAt),
       'สถานะ': getStatusText(j.status),
-      'วันที่แจ้งซ่อม': new Date(j.createdAt).toLocaleDateString('th-TH')
-    })));
+      'ชื่อ-นามสกุล': j.customer?.name || '',
+      'เลขบัตรประชาชน': citizen(j.customer?.citizenId),
+      'เบอร์โทร': j.customer?.phone || '',
+      'ที่อยู่': j.customer?.address || '',
+      'ชนิดสิ่งของ': j.category?.name || '',
+      'ประเภทบริการ (V-Care)': (getServiceType(j.serviceType) || getServiceType(guessServiceType(j.category?.name || '', j.itemDetail || '')))?.label || '',
+      'ยี่ห้อ / รุ่น': j.brandModel || '',
+      'รายละเอียดสิ่งของ': j.itemDetail || '',
+      'ทะเบียนรถ': j.licensePlate || '',
+      'อาการเสีย': j.symptoms || '',
+      'ผลการซ่อม / หมายเหตุช่าง': j.repairNotes || '',
+      'ช่างผู้ซ่อม': j.repairerName || '',
+      'อะไหล่ที่เปลี่ยน': j.partsUsed || '',
+      'ค่าใช้จ่าย (บาท)': j.partsCost ?? '',
+      'อัปเดตล่าสุด': dt(j.updatedAt),
+      'ส่งออก V-Care': j.vcareExportedAt ? `ส่งแล้ว ${dt(j.vcareExportedAt)}` : '',
+    }));
+    const wsJobs = XLSX.utils.json_to_sheet(jobRows);
+    wsJobs['!cols'] = [6, 12, 17, 20, 24, 16, 13, 36, 18, 34, 20, 26, 16, 30, 30, 18, 22, 12, 17, 22].map(wch => ({ wch }));
+
+    // ลูกค้า (จากงานทั้งหมด) พร้อมจำนวนงานและวันที่มาใช้บริการครั้งแรก/ล่าสุด
+    const byCustomer = new Map<number, any[]>();
+    sorted.forEach(j => { if (j.customer) byCustomer.set(j.customerId, [...(byCustomer.get(j.customerId) || []), j]); });
+    const customerRows = [...byCustomer.values()].map((list, i) => {
+      const c = list[0].customer;
+      const active = list.filter(j => j.status !== 'CANCELLED');
+      return {
+        'ลำดับ': i + 1,
+        'ชื่อ-นามสกุล': c.name,
+        'เลขบัตรประชาชน': citizen(c.citizenId),
+        'เบอร์โทร': c.phone || '',
+        'ที่อยู่': c.address || '',
+        'จำนวนงาน (ไม่รวมยกเลิก)': active.length,
+        'งานที่ยกเลิก': list.length - active.length,
+        'รหัสคิวงาน': list.map(j => j.jobId).join(', '),
+        'มาครั้งแรก': dt(list[0].createdAt),
+        'มาล่าสุด': dt(list[list.length - 1].createdAt),
+      };
+    });
+    const wsCustomers = XLSX.utils.json_to_sheet(customerRows);
+    wsCustomers['!cols'] = [6, 24, 16, 13, 40, 12, 10, 30, 17, 17].map(wch => ({ wch }));
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Jobs");
-    XLSX.writeFile(wb, "FixIT_Jobs.xlsx");
+    XLSX.utils.book_append_sheet(wb, wsJobs, 'งานซ่อม');
+    XLSX.utils.book_append_sheet(wb, wsCustomers, 'ลูกค้า');
+    const today = new Date().toLocaleDateString('en-CA');
+    XLSX.writeFile(wb, `FixIT_Jobs_${today}.xlsx`, { compression: true });
   };
 
   const exportPDF = async () => {
